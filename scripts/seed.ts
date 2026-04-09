@@ -20,6 +20,8 @@ async function main() {
   const sql = neon(databaseUrl);
 
   // Drop old tables
+  await sql`DROP TABLE IF EXISTS reward`;
+  await sql`DROP TABLE IF EXISTS deals`;
   await sql`DROP TABLE IF EXISTS referrals`;
   await sql`DROP TABLE IF EXISTS invites`;
   await sql`DROP TABLE IF EXISTS users`;
@@ -76,6 +78,33 @@ async function main() {
     )
   `;
   console.log("Created referrals table");
+
+  // Create deals table
+  await sql`
+    CREATE TABLE IF NOT EXISTS deals (
+      id SERIAL PRIMARY KEY,
+      title TEXT NOT NULL,
+      description TEXT NOT NULL DEFAULT '',
+      is_default BOOLEAN NOT NULL DEFAULT false,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    )
+  `;
+  console.log("Created deals table");
+
+  // Create reward table (single row)
+  await sql`
+    CREATE TABLE IF NOT EXISTS reward (
+      id INTEGER PRIMARY KEY DEFAULT 1 CHECK (id = 1),
+      title TEXT NOT NULL DEFAULT '',
+      description TEXT NOT NULL DEFAULT ''
+    )
+  `;
+  await sql`
+    INSERT INTO reward (id, title, description)
+    VALUES (1, '', '')
+    ON CONFLICT (id) DO NOTHING
+  `;
+  console.log("Created reward table");
 
   // Seed admin user
   const existing = await sql`SELECT id FROM users WHERE email = 'admin@lawbrokr.ca'`;
