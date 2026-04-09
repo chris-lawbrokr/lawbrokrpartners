@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import crypto from "crypto";
 import bcrypt from "bcryptjs";
 import { getDb } from "@/lib/db";
 
@@ -93,8 +94,9 @@ export async function POST(
   }
 
   const passwordHash = await bcrypt.hash(password, 12);
+  const referralCode = crypto.randomBytes(6).toString("hex");
 
-  // Update user with partner's info and activate
+  // Update user with partner's info, activate, and assign referral code
   await sql`
     UPDATE users
     SET first_name = ${firstName},
@@ -102,6 +104,7 @@ export async function POST(
         email = ${email},
         website = ${website ?? ""},
         password_hash = ${passwordHash},
+        referral_code = ${referralCode},
         status = 'active'
     WHERE id = ${invite?.user_id as number}
   `;
@@ -109,5 +112,8 @@ export async function POST(
   // Mark invite as used
   await sql`UPDATE invites SET used = true, used_at = NOW() WHERE id = ${invite?.invite_id as number}`;
 
-  return NextResponse.json({ ok: true }, { status: 201 });
+  return NextResponse.json({
+    ok: true,
+    referralLink: `https://www.lawbrokr.com/referral?ref=${referralCode}`,
+  }, { status: 201 });
 }

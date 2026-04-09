@@ -20,11 +20,11 @@ async function main() {
   const sql = neon(databaseUrl);
 
   // Drop old tables
+  await sql`DROP TABLE IF EXISTS referrals`;
   await sql`DROP TABLE IF EXISTS invites`;
   await sql`DROP TABLE IF EXISTS users`;
 
   // Create users table
-  // status: 'active' or 'pending'
   await sql`
     CREATE TABLE IF NOT EXISTS users (
       id SERIAL PRIMARY KEY,
@@ -33,6 +33,7 @@ async function main() {
       email TEXT NOT NULL DEFAULT '',
       password_hash TEXT NOT NULL DEFAULT '',
       website TEXT NOT NULL DEFAULT '',
+      referral_code TEXT UNIQUE,
       status TEXT NOT NULL DEFAULT 'pending',
       is_admin BOOLEAN NOT NULL DEFAULT false,
       created_at TIMESTAMPTZ DEFAULT NOW()
@@ -52,6 +53,20 @@ async function main() {
     )
   `;
   console.log("Created invites table");
+
+  // Create referrals table
+  await sql`
+    CREATE TABLE IF NOT EXISTS referrals (
+      id SERIAL PRIMARY KEY,
+      partner_id INTEGER NOT NULL REFERENCES users(id),
+      referral_code TEXT NOT NULL,
+      visitor_ip TEXT,
+      visitor_user_agent TEXT,
+      status TEXT NOT NULL DEFAULT 'pending',
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    )
+  `;
+  console.log("Created referrals table");
 
   // Seed admin user
   const existing = await sql`SELECT id FROM users WHERE email = 'admin@lawbrokr.ca'`;
