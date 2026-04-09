@@ -19,34 +19,51 @@ async function main() {
 
   const sql = neon(databaseUrl);
 
-  // Drop old table if it exists with the old schema
+  // Drop old tables
+  await sql`DROP TABLE IF EXISTS invites`;
   await sql`DROP TABLE IF EXISTS users`;
 
   // Create users table
+  // status: 'active' or 'pending'
   await sql`
     CREATE TABLE IF NOT EXISTS users (
       id SERIAL PRIMARY KEY,
-      first_name TEXT NOT NULL,
-      last_name TEXT NOT NULL,
-      email TEXT UNIQUE NOT NULL,
-      password_hash TEXT NOT NULL,
+      first_name TEXT NOT NULL DEFAULT '',
+      last_name TEXT NOT NULL DEFAULT '',
+      email TEXT NOT NULL DEFAULT '',
+      password_hash TEXT NOT NULL DEFAULT '',
       website TEXT NOT NULL DEFAULT '',
+      status TEXT NOT NULL DEFAULT 'pending',
+      is_admin BOOLEAN NOT NULL DEFAULT false,
       created_at TIMESTAMPTZ DEFAULT NOW()
     )
   `;
   console.log("Created users table");
 
-  // Seed a test user (skip if already exists)
+  // Create invites table
+  await sql`
+    CREATE TABLE IF NOT EXISTS invites (
+      id SERIAL PRIMARY KEY,
+      token TEXT UNIQUE NOT NULL,
+      user_id INTEGER NOT NULL REFERENCES users(id),
+      used BOOLEAN NOT NULL DEFAULT false,
+      created_at TIMESTAMPTZ DEFAULT NOW(),
+      used_at TIMESTAMPTZ
+    )
+  `;
+  console.log("Created invites table");
+
+  // Seed admin user
   const existing = await sql`SELECT id FROM users WHERE email = 'admin@lawbrokr.ca'`;
   if (existing.length === 0) {
     const hash = await bcrypt.hash("password123", 12);
     await sql`
-      INSERT INTO users (first_name, last_name, email, password_hash, website)
-      VALUES ('Admin', 'User', 'admin@lawbrokr.ca', ${hash}, 'https://lawbrokr.ca')
+      INSERT INTO users (first_name, last_name, email, password_hash, website, status, is_admin)
+      VALUES ('Admin', 'User', 'admin@lawbrokr.ca', ${hash}, 'https://lawbrokr.ca', 'active', true)
     `;
-    console.log("Seeded test user: admin@lawbrokr.ca / password123");
+    console.log("Seeded admin user: admin@lawbrokr.ca / password123");
   } else {
-    console.log("Test user already exists, skipping");
+    console.log("Admin user already exists, skipping");
   }
 
   console.log("Done!");
