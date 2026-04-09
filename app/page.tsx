@@ -44,127 +44,94 @@ export default function Home() {
   }
 
   return (
-    <main style={{ padding: "2rem", maxWidth: "1100px", margin: "0 auto" }}>
-      <header
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: "2rem",
-        }}
-      >
-        <h1>LawBrokr Partners Dashboard</h1>
-        <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
-          {user ? <span>{user.firstName} {user.lastName}</span> : null}
+    <main className="mx-auto max-w-[1100px] p-8">
+      <header className="mb-8 flex items-center justify-between">
+        <h1 className="text-2xl font-bold">LawBrokr Partners Dashboard</h1>
+        <div className="flex items-center gap-4">
+          {user ? <span className="text-sm text-brand-gray-400">{user.firstName} {user.lastName}</span> : null}
           <button
+            type="button"
             onClick={() => { void logout(); }}
-            style={{
-              padding: "0.5rem 1rem",
-              cursor: "pointer",
-              borderRadius: "4px",
-              border: "1px solid #ccc",
-              background: "transparent",
-              color: "inherit",
-            }}
+            className="cursor-pointer rounded border border-brand-gray-100 bg-transparent px-4 py-2 text-sm"
           >
             Logout
           </button>
         </div>
       </header>
 
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
-        <h2>Partners</h2>
+      <div className="mb-4 flex items-center justify-between">
+        <h2 className="text-xl font-semibold">Partners</h2>
         <button
+          type="button"
           onClick={() => { setShowModal(true); }}
-          style={{
-            padding: "0.5rem 1rem",
-            borderRadius: "4px",
-            border: "none",
-            background: "#2563eb",
-            color: "#fff",
-            cursor: "pointer",
-            fontSize: "0.875rem",
-          }}
+          className="cursor-pointer rounded bg-purple-400 px-4 py-2 text-sm font-medium text-white"
         >
           Create Partner
         </button>
       </div>
 
-      <div style={{ overflowX: "auto" }}>
-        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.875rem" }}>
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
           <thead>
-            <tr style={{ borderBottom: "2px solid #e5e7eb", textAlign: "left" }}>
-              <th style={{ padding: "0.75rem 0.5rem" }}>Name</th>
-              <th style={{ padding: "0.75rem 0.5rem" }}>Email</th>
-              <th style={{ padding: "0.75rem 0.5rem" }}>Website</th>
-              <th style={{ padding: "0.75rem 0.5rem" }}>Status</th>
-              <th style={{ padding: "0.75rem 0.5rem" }}>Created</th>
-              <th style={{ padding: "0.75rem 0.5rem" }}>Invite</th>
+            <tr className="border-b-2 border-gray-200 text-left">
+              <th className="px-2 py-3">Name</th>
+              <th className="px-2 py-3">Email</th>
+              <th className="px-2 py-3">Website</th>
+              <th className="px-2 py-3">Status</th>
+              <th className="px-2 py-3">Created</th>
+              <th className="px-2 py-3">Invite</th>
             </tr>
           </thead>
           <tbody>
             {users.length === 0 ? (
               <tr>
-                <td colSpan={6} style={{ padding: "1.5rem 0.5rem", textAlign: "center", color: "#9ca3af" }}>
+                <td colSpan={6} className="py-6 text-center text-brand-gray-200">
                   No partners yet. Create one to get started.
                 </td>
               </tr>
             ) : null}
             {users.map((u) => (
-              <tr key={u.id} style={{ borderBottom: "1px solid #e5e7eb" }}>
-                <td style={{ padding: "0.75rem 0.5rem" }}>
+              <tr key={u.id} className="border-b border-gray-200">
+                <td className="px-2 py-3">
                   {u.first_name || u.last_name
                     ? `${u.first_name} ${u.last_name}`.trim()
-                    : <span style={{ color: "#9ca3af" }}>-</span>}
+                    : <span className="text-brand-gray-200">-</span>}
                 </td>
-                <td style={{ padding: "0.75rem 0.5rem" }}>
-                  {u.email || <span style={{ color: "#9ca3af" }}>-</span>}
+                <td className="px-2 py-3">
+                  {u.email || <span className="text-brand-gray-200">-</span>}
                 </td>
-                <td style={{ padding: "0.75rem 0.5rem" }}>
+                <td className="px-2 py-3">
                   {u.website ? (
-                    <a href={u.website} target="_blank" rel="noopener noreferrer" style={{ color: "#2563eb", textDecoration: "underline" }}>
+                    <a href={u.website} target="_blank" rel="noopener noreferrer" className="text-purple-400 underline">
                       {u.website}
                     </a>
                   ) : (
-                    <span style={{ color: "#9ca3af" }}>-</span>
+                    <span className="text-brand-gray-200">-</span>
                   )}
                 </td>
-                <td style={{ padding: "0.75rem 0.5rem" }}>
-                  <span
-                    style={{
-                      display: "inline-block",
-                      padding: "0.2rem 0.5rem",
-                      borderRadius: "9999px",
-                      fontSize: "0.75rem",
-                      fontWeight: 600,
-                      background: u.status === "active" ? "#dcfce7" : "#fef9c3",
-                      color: u.status === "active" ? "#166534" : "#854d0e",
-                    }}
-                  >
+                <td className="px-2 py-3">
+                  <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-semibold ${
+                    u.status === "active"
+                      ? "bg-green-100 text-green-800"
+                      : "bg-yellow-100 text-yellow-800"
+                  }`}>
                     {u.status === "active" ? "Active" : "Pending"}
                   </span>
                 </td>
-                <td style={{ padding: "0.75rem 0.5rem", color: "#6b7280" }}>
+                <td className="px-2 py-3 text-brand-gray-300">
                   {new Date(u.created_at).toLocaleDateString()}
                 </td>
-                <td style={{ padding: "0.75rem 0.5rem" }}>
+                <td className="px-2 py-3">
                   {u.invite_token && u.status === "pending" ? (
                     <button
+                      type="button"
                       onClick={() => { void copyLink(u.invite_token ?? ""); }}
-                      style={{
-                        padding: "0.25rem 0.5rem",
-                        borderRadius: "4px",
-                        border: "1px solid #ccc",
-                        background: "transparent",
-                        cursor: "pointer",
-                        fontSize: "0.75rem",
-                        color: "inherit",
-                      }}
+                      className="cursor-pointer rounded border border-brand-gray-100 bg-transparent px-2 py-1 text-xs"
                     >
                       {copiedToken === u.invite_token ? "Copied!" : "Copy Link"}
                     </button>
                   ) : u.status === "active" ? (
-                    <span style={{ color: "#9ca3af", fontSize: "0.75rem" }}>Used</span>
+                    <span className="text-xs text-brand-gray-200">Used</span>
                   ) : null}
                 </td>
               </tr>
@@ -234,64 +201,31 @@ function CreatePartnerModal({ onClose, onCreated }: { onClose: () => void; onCre
 
   return (
     <div
-      style={{
-        position: "fixed",
-        inset: 0,
-        background: "rgba(0,0,0,0.4)",
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        zIndex: 50,
-      }}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div style={{ background: "#fff", borderRadius: "8px", padding: "2rem", width: "100%", maxWidth: "450px" }}>
+      <div className="w-full max-w-[450px] rounded-lg bg-white p-8">
         {inviteLink ? (
           <>
-            <h2 style={{ marginBottom: "1rem" }}>Invite Link Created</h2>
-            <p style={{ marginBottom: "0.5rem", fontSize: "0.875rem", color: "#666" }}>
+            <h2 className="mb-4 text-lg font-semibold">Invite Link Created</h2>
+            <p className="mb-2 text-sm text-brand-gray-300">
               Send this link to the partner. It can only be used once.
             </p>
-            <div
-              style={{
-                padding: "0.75rem",
-                background: "#f3f4f6",
-                borderRadius: "4px",
-                fontSize: "0.8rem",
-                wordBreak: "break-all",
-                marginBottom: "1rem",
-              }}
-            >
+            <div className="mb-4 break-all rounded bg-brand-gray-50 p-3 text-xs">
               {inviteLink}
             </div>
-            <div style={{ display: "flex", gap: "0.5rem" }}>
+            <div className="flex gap-2">
               <button
+                type="button"
                 onClick={() => { void copyLink(); }}
-                style={{
-                  flex: 1,
-                  padding: "0.75rem",
-                  borderRadius: "4px",
-                  border: "none",
-                  background: "#2563eb",
-                  color: "#fff",
-                  cursor: "pointer",
-                  fontSize: "0.875rem",
-                }}
+                className="flex-1 cursor-pointer rounded bg-purple-400 py-3 text-sm font-medium text-white"
               >
                 {copied ? "Copied!" : "Copy Link"}
               </button>
               <button
+                type="button"
                 onClick={onClose}
-                style={{
-                  flex: 1,
-                  padding: "0.75rem",
-                  borderRadius: "4px",
-                  border: "1px solid #ccc",
-                  background: "transparent",
-                  cursor: "pointer",
-                  fontSize: "0.875rem",
-                  color: "inherit",
-                }}
+                className="flex-1 cursor-pointer rounded border border-brand-gray-100 bg-transparent py-3 text-sm"
               >
                 Close
               </button>
@@ -299,93 +233,75 @@ function CreatePartnerModal({ onClose, onCreated }: { onClose: () => void; onCre
           </>
         ) : (
           <>
-            <h2 style={{ marginBottom: "0.5rem" }}>Create Partner</h2>
-            <p style={{ fontSize: "0.875rem", color: "#666", marginBottom: "1rem" }}>
+            <h2 className="mb-1 text-lg font-semibold">Create Partner</h2>
+            <p className="mb-4 text-sm text-brand-gray-300">
               Optionally pre-fill partner details for reference. The partner can update these when they sign up.
             </p>
 
             {error ? (
-              <div style={{ padding: "0.75rem", borderRadius: "4px", background: "#fee2e2", color: "#dc2626", fontSize: "0.875rem", marginBottom: "1rem" }}>
+              <div className="mb-4 rounded bg-red-100 p-3 text-sm text-red-600">
                 {error}
               </div>
             ) : null}
 
             <form
               onSubmit={(e) => { void handleSubmit(e); }}
-              style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}
+              className="flex flex-col gap-3"
             >
-              <div style={{ display: "flex", gap: "0.75rem" }}>
-                <label style={{ display: "flex", flexDirection: "column", gap: "0.25rem", flex: 1 }}>
+              <div className="flex gap-3">
+                <label className="flex flex-1 flex-col gap-1 text-sm font-medium">
                   First Name
                   <input
                     type="text"
                     value={firstName}
                     onChange={(e) => { setFirstName(e.target.value); }}
                     placeholder="Optional"
-                    style={{ padding: "0.5rem", borderRadius: "4px", border: "1px solid #ccc", fontSize: "1rem" }}
+                    className="rounded border border-brand-gray-100 bg-brand-gray-50 px-3 py-2 text-base outline-none focus:border-purple-400"
                   />
                 </label>
-                <label style={{ display: "flex", flexDirection: "column", gap: "0.25rem", flex: 1 }}>
+                <label className="flex flex-1 flex-col gap-1 text-sm font-medium">
                   Last Name
                   <input
                     type="text"
                     value={lastName}
                     onChange={(e) => { setLastName(e.target.value); }}
                     placeholder="Optional"
-                    style={{ padding: "0.5rem", borderRadius: "4px", border: "1px solid #ccc", fontSize: "1rem" }}
+                    className="rounded border border-brand-gray-100 bg-brand-gray-50 px-3 py-2 text-base outline-none focus:border-purple-400"
                   />
                 </label>
               </div>
-              <label style={{ display: "flex", flexDirection: "column", gap: "0.25rem" }}>
+              <label className="flex flex-col gap-1 text-sm font-medium">
                 Email
                 <input
                   type="email"
                   value={email}
                   onChange={(e) => { setEmail(e.target.value); }}
                   placeholder="Optional"
-                  style={{ padding: "0.5rem", borderRadius: "4px", border: "1px solid #ccc", fontSize: "1rem" }}
+                  className="rounded border border-brand-gray-100 bg-brand-gray-50 px-3 py-2 text-base outline-none focus:border-purple-400"
                 />
               </label>
-              <label style={{ display: "flex", flexDirection: "column", gap: "0.25rem" }}>
+              <label className="flex flex-col gap-1 text-sm font-medium">
                 Website
                 <input
                   type="url"
                   value={website}
                   onChange={(e) => { setWebsite(e.target.value); }}
                   placeholder="Optional"
-                  style={{ padding: "0.5rem", borderRadius: "4px", border: "1px solid #ccc", fontSize: "1rem" }}
+                  className="rounded border border-brand-gray-100 bg-brand-gray-50 px-3 py-2 text-base outline-none focus:border-purple-400"
                 />
               </label>
-              <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.5rem" }}>
+              <div className="mt-2 flex gap-2">
                 <button
                   type="submit"
                   disabled={submitting}
-                  style={{
-                    flex: 1,
-                    padding: "0.75rem",
-                    borderRadius: "4px",
-                    border: "none",
-                    background: "#2563eb",
-                    color: "#fff",
-                    cursor: submitting ? "not-allowed" : "pointer",
-                    opacity: submitting ? 0.7 : 1,
-                    fontSize: "0.875rem",
-                  }}
+                  className="flex-1 cursor-pointer rounded bg-purple-400 py-3 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-70"
                 >
                   {submitting ? "Creating..." : "Generate Invite Link"}
                 </button>
                 <button
                   type="button"
                   onClick={onClose}
-                  style={{
-                    padding: "0.75rem",
-                    borderRadius: "4px",
-                    border: "1px solid #ccc",
-                    background: "transparent",
-                    cursor: "pointer",
-                    fontSize: "0.875rem",
-                    color: "inherit",
-                  }}
+                  className="cursor-pointer rounded border border-brand-gray-100 bg-transparent px-4 py-3 text-sm"
                 >
                   Cancel
                 </button>

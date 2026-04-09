@@ -25,90 +25,47 @@ export default function LoginPage() {
   };
 
   return (
-    <main
-      style={{
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        minHeight: "100vh",
-      }}
-    >
+    <main className="flex min-h-screen items-center justify-center">
       <form
-        onSubmit={(e) => {
-          void handleSubmit(e);
-        }}
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          gap: "1rem",
-          width: "100%",
-          maxWidth: "400px",
-          padding: "2rem",
-        }}
+        onSubmit={(e) => { void handleSubmit(e); }}
+        className="flex w-full max-w-[400px] flex-col gap-4 p-8"
       >
-        <h1 style={{ textAlign: "center", marginBottom: "1rem" }}>
+        <h1 className="mb-4 text-center text-2xl font-bold">
           LawBrokr Partners
         </h1>
 
         {error ? (
-          <div
-            style={{
-              padding: "0.75rem",
-              borderRadius: "4px",
-              background: "#fee2e2",
-              color: "#dc2626",
-              fontSize: "0.875rem",
-            }}
-          >
+          <div className="rounded bg-red-100 p-3 text-sm text-red-600">
             {error}
           </div>
         ) : null}
 
-        <label style={{ display: "flex", flexDirection: "column", gap: "0.25rem" }}>
+        <label className="flex flex-col gap-1">
           Email
           <input
             type="email"
             value={email}
             onChange={(e) => { setEmail(e.target.value); }}
             required
-            style={{
-              padding: "0.5rem",
-              borderRadius: "4px",
-              border: "1px solid #ccc",
-              fontSize: "1rem",
-            }}
+            className="rounded border border-brand-gray-100 bg-brand-gray-50 px-3 py-2 text-base outline-none focus:border-purple-400"
           />
         </label>
 
-        <label style={{ display: "flex", flexDirection: "column", gap: "0.25rem" }}>
+        <label className="flex flex-col gap-1">
           Password
           <input
             type="password"
             value={password}
             onChange={(e) => { setPassword(e.target.value); }}
             required
-            style={{
-              padding: "0.5rem",
-              borderRadius: "4px",
-              border: "1px solid #ccc",
-              fontSize: "1rem",
-            }}
+            className="rounded border border-brand-gray-100 bg-brand-gray-50 px-3 py-2 text-base outline-none focus:border-purple-400"
           />
         </label>
 
         <button
           type="submit"
           disabled={loading}
-          style={{
-            padding: "0.75rem",
-            borderRadius: "4px",
-            border: "none",
-            background: "#2563eb",
-            color: "#fff",
-            fontSize: "1rem",
-            cursor: loading ? "not-allowed" : "pointer",
-            opacity: loading ? 0.7 : 1,
-          }}
+          className="cursor-pointer rounded bg-brand-gray-600 py-3 text-base font-semibold text-white disabled:cursor-not-allowed disabled:opacity-70"
         >
           {loading ? "Signing in..." : "Sign in"}
         </button>

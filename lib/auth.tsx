@@ -65,16 +65,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
   const accessTokenRef = useRef<string | null>(null);
   const refreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [user, setUser] = useState<User | null>(() => {
-    if (typeof document === "undefined") return null;
+  const [user, setUser] = useState<User | null>(null);
+
+  // Hydrate user from cookie after mount to avoid SSR/client mismatch
+  useEffect(() => {
     const stored = getCookie("session_user");
-    if (!stored) return null;
+    if (!stored) return;
     try {
-      return JSON.parse(stored) as User;
+      setUser(JSON.parse(stored) as User);
     } catch {
-      return null;
+      // ignore
     }
-  });
+  }, []);
 
   // Wire up the token getter for apiFetch
   useEffect(() => {
