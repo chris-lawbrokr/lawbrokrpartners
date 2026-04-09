@@ -38,26 +38,37 @@ export default function InvitePage() {
 
   if (done) {
     return (
-      <div>
-        <h1>Account Created</h1>
-        <p>Your account has been set up. You can now sign in.</p>
-        <button
-          type="button"
-          onClick={() => {
-            router.push("/login");
-          }}
-        >
-          Go to Login
-        </button>
+      <div className="flex h-screen w-screen items-center justify-center bg-brand-gray-50">
+        <div className="max-w-sm rounded-2xl bg-white p-10 text-center shadow-sm">
+          <h1 className="mb-3 text-2xl font-bold text-brand-gray-600">
+            Account Created
+          </h1>
+          <p className="mb-6 text-sm text-brand-gray-300">
+            Your account has been set up. You can now sign in.
+          </p>
+          <button
+            type="button"
+            onClick={() => {
+              router.push("/login");
+            }}
+            className="w-full cursor-pointer rounded-lg bg-purple-600 py-3 text-base font-semibold text-white hover:bg-purple-500"
+          >
+            Go to Login
+          </button>
+        </div>
       </div>
     );
   }
 
   if (error && !loaded) {
     return (
-      <div>
-        <h1>Invite Link</h1>
-        <p>{error}</p>
+      <div className="flex h-screen w-screen items-center justify-center bg-brand-gray-50">
+        <div className="max-w-sm rounded-2xl bg-white p-10 text-center shadow-sm">
+          <h1 className="mb-3 text-2xl font-bold text-brand-gray-600">
+            Invite Link
+          </h1>
+          <p className="text-sm text-red-500">{error}</p>
+        </div>
       </div>
     );
   }

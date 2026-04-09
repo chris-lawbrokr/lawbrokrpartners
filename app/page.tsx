@@ -18,7 +18,8 @@ interface PartnerUser {
 export default function Home() {
   const { user, logout } = useAuth();
   const [users, setUsers] = useState<PartnerUser[]>([]);
-  const [showModal, setShowModal] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<PartnerUser | null>(null);
   const [copiedToken, setCopiedToken] = useState<string | null>(null);
 
   const loadData = useCallback(async () => {
@@ -63,7 +64,7 @@ export default function Home() {
         <h2 className="text-xl font-semibold">Partners</h2>
         <button
           type="button"
-          onClick={() => { setShowModal(true); }}
+          onClick={() => { setShowCreateModal(true); }}
           className="cursor-pointer rounded bg-purple-400 px-4 py-2 text-sm font-medium text-white"
         >
           Create Partner
@@ -91,7 +92,11 @@ export default function Home() {
               </tr>
             ) : null}
             {users.map((u) => (
-              <tr key={u.id} className="border-b border-gray-200">
+              <tr
+                key={u.id}
+                className="cursor-pointer border-b border-gray-200 transition-colors hover:bg-brand-gray-50"
+                onClick={() => { setSelectedUser(u); }}
+              >
                 <td className="px-2 py-3">
                   {u.first_name || u.last_name
                     ? `${u.first_name} ${u.last_name}`.trim()
@@ -102,9 +107,15 @@ export default function Home() {
                 </td>
                 <td className="px-2 py-3">
                   {u.website ? (
-                    <a href={u.website} target="_blank" rel="noopener noreferrer" className="text-purple-400 underline">
+                    <span
+                      className="text-purple-400 underline"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        window.open(u.website, "_blank");
+                      }}
+                    >
                       {u.website}
-                    </a>
+                    </span>
                   ) : (
                     <span className="text-brand-gray-200">-</span>
                   )}
@@ -125,7 +136,10 @@ export default function Home() {
                   {u.invite_token && u.status === "pending" ? (
                     <button
                       type="button"
-                      onClick={() => { void copyLink(u.invite_token ?? ""); }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        void copyLink(u.invite_token ?? "");
+                      }}
                       className="cursor-pointer rounded border border-brand-gray-100 bg-transparent px-2 py-1 text-xs"
                     >
                       {copiedToken === u.invite_token ? "Copied!" : "Copy Link"}
@@ -140,13 +154,196 @@ export default function Home() {
         </table>
       </div>
 
-      {showModal ? (
+      {showCreateModal ? (
         <CreatePartnerModal
-          onClose={() => { setShowModal(false); }}
+          onClose={() => { setShowCreateModal(false); }}
           onCreated={() => { void loadData(); }}
         />
       ) : null}
+
+      {selectedUser ? (
+        <UserDetailModal
+          user={selectedUser}
+          onClose={() => { setSelectedUser(null); }}
+          onUpdated={() => {
+            setSelectedUser(null);
+            void loadData();
+          }}
+        />
+      ) : null}
     </main>
+  );
+}
+
+function UserDetailModal({ user, onClose, onUpdated }: { user: PartnerUser; onClose: () => void; onUpdated: () => void }) {
+  const [editing, setEditing] = useState(false);
+  const [firstName, setFirstName] = useState(user.first_name);
+  const [lastName, setLastName] = useState(user.last_name);
+  const [email, setEmail] = useState(user.email);
+  const [website, setWebsite] = useState(user.website);
+  const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+
+  const handleSave = async () => {
+    setError(null);
+    setSubmitting(true);
+    try {
+      const res = await fetch(`/api/users/${String(user.id)}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ firstName, lastName, email, website }),
+      });
+      if (!res.ok) {
+        const data = (await res.json().catch(() => null)) as { message?: string } | null;
+        throw new Error(data?.message ?? "Failed to update");
+      }
+      onUpdated();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    setSubmitting(true);
+    try {
+      await fetch(`/api/users/${String(user.id)}`, { method: "DELETE" });
+      onUpdated();
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <div className="w-full max-w-[500px] rounded-lg bg-white p-8">
+        <div className="mb-6 flex items-center justify-between">
+          <h2 className="text-lg font-semibold">Partner Details</h2>
+          <button
+            type="button"
+            onClick={onClose}
+            className="cursor-pointer text-brand-gray-300 hover:text-brand-gray-600"
+          >
+            &times;
+          </button>
+        </div>
+
+        {error ? (
+          <div className="mb-4 rounded bg-red-100 p-3 text-sm text-red-600">{error}</div>
+        ) : null}
+
+        {editing ? (
+          <div className="flex flex-col gap-3">
+            <div className="flex gap-3">
+              <label className="flex min-w-0 flex-1 flex-col gap-1 text-sm font-medium">
+                First Name
+                <input
+                  type="text"
+                  value={firstName}
+                  onChange={(e) => { setFirstName(e.target.value); }}
+                  className="w-full rounded border border-brand-gray-100 bg-brand-gray-50 px-3 py-2 text-base outline-none focus:border-purple-400"
+                />
+              </label>
+              <label className="flex min-w-0 flex-1 flex-col gap-1 text-sm font-medium">
+                Last Name
+                <input
+                  type="text"
+                  value={lastName}
+                  onChange={(e) => { setLastName(e.target.value); }}
+                  className="w-full rounded border border-brand-gray-100 bg-brand-gray-50 px-3 py-2 text-base outline-none focus:border-purple-400"
+                />
+              </label>
+            </div>
+            <label className="flex flex-col gap-1 text-sm font-medium">
+              Email
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => { setEmail(e.target.value); }}
+                className="rounded border border-brand-gray-100 bg-brand-gray-50 px-3 py-2 text-base outline-none focus:border-purple-400"
+              />
+            </label>
+            <label className="flex flex-col gap-1 text-sm font-medium">
+              Website
+              <input
+                type="url"
+                value={website}
+                onChange={(e) => { setWebsite(e.target.value); }}
+                className="rounded border border-brand-gray-100 bg-brand-gray-50 px-3 py-2 text-base outline-none focus:border-purple-400"
+              />
+            </label>
+            <div className="mt-2 flex gap-2">
+              <button
+                type="button"
+                disabled={submitting}
+                onClick={() => { void handleSave(); }}
+                className="flex-1 cursor-pointer rounded bg-purple-400 py-3 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-70"
+              >
+                {submitting ? "Saving..." : "Save Changes"}
+              </button>
+              <button
+                type="button"
+                onClick={() => { setEditing(false); }}
+                className="cursor-pointer rounded border border-brand-gray-100 bg-transparent px-4 py-3 text-sm"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        ) : (
+          <>
+            <div className="mb-6 space-y-3">
+              <DetailRow label="Name" value={`${user.first_name} ${user.last_name}`.trim()} />
+              <DetailRow label="Email" value={user.email} />
+              <DetailRow label="Website" value={user.website} />
+              <DetailRow label="Status" value={user.status === "active" ? "Active" : "Pending"} />
+              <DetailRow label="Created" value={new Date(user.created_at).toLocaleDateString()} />
+            </div>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => { setEditing(true); }}
+                className="flex-1 cursor-pointer rounded bg-purple-400 py-3 text-sm font-medium text-white"
+              >
+                Edit
+              </button>
+              {confirmDelete ? (
+                <button
+                  type="button"
+                  disabled={submitting}
+                  onClick={() => { void handleDelete(); }}
+                  className="flex-1 cursor-pointer rounded bg-red-600 py-3 text-sm font-medium text-white disabled:opacity-70"
+                >
+                  {submitting ? "Deleting..." : "Confirm Delete"}
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => { setConfirmDelete(true); }}
+                  className="flex-1 cursor-pointer rounded border border-red-300 bg-transparent py-3 text-sm font-medium text-red-600"
+                >
+                  Delete
+                </button>
+              )}
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function DetailRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-baseline justify-between border-b border-gray-100 pb-2">
+      <span className="text-sm font-medium text-brand-gray-300">{label}</span>
+      <span className="text-sm text-brand-gray-600">{value || <span className="text-brand-gray-200">-</span>}</span>
+    </div>
   );
 }
 
@@ -249,24 +446,24 @@ function CreatePartnerModal({ onClose, onCreated }: { onClose: () => void; onCre
               className="flex flex-col gap-3"
             >
               <div className="flex gap-3">
-                <label className="flex flex-1 flex-col gap-1 text-sm font-medium">
+                <label className="flex min-w-0 flex-1 flex-col gap-1 text-sm font-medium">
                   First Name
                   <input
                     type="text"
                     value={firstName}
                     onChange={(e) => { setFirstName(e.target.value); }}
                     placeholder="Optional"
-                    className="rounded border border-brand-gray-100 bg-brand-gray-50 px-3 py-2 text-base outline-none focus:border-purple-400"
+                    className="w-full rounded border border-brand-gray-100 bg-brand-gray-50 px-3 py-2 text-base outline-none focus:border-purple-400"
                   />
                 </label>
-                <label className="flex flex-1 flex-col gap-1 text-sm font-medium">
+                <label className="flex min-w-0 flex-1 flex-col gap-1 text-sm font-medium">
                   Last Name
                   <input
                     type="text"
                     value={lastName}
                     onChange={(e) => { setLastName(e.target.value); }}
                     placeholder="Optional"
-                    className="rounded border border-brand-gray-100 bg-brand-gray-50 px-3 py-2 text-base outline-none focus:border-purple-400"
+                    className="w-full rounded border border-brand-gray-100 bg-brand-gray-50 px-3 py-2 text-base outline-none focus:border-purple-400"
                   />
                 </label>
               </div>
@@ -277,7 +474,7 @@ function CreatePartnerModal({ onClose, onCreated }: { onClose: () => void; onCre
                   value={email}
                   onChange={(e) => { setEmail(e.target.value); }}
                   placeholder="Optional"
-                  className="rounded border border-brand-gray-100 bg-brand-gray-50 px-3 py-2 text-base outline-none focus:border-purple-400"
+                  className="w-full rounded border border-brand-gray-100 bg-brand-gray-50 px-3 py-2 text-base outline-none focus:border-purple-400"
                 />
               </label>
               <label className="flex flex-col gap-1 text-sm font-medium">
@@ -287,7 +484,7 @@ function CreatePartnerModal({ onClose, onCreated }: { onClose: () => void; onCre
                   value={website}
                   onChange={(e) => { setWebsite(e.target.value); }}
                   placeholder="Optional"
-                  className="rounded border border-brand-gray-100 bg-brand-gray-50 px-3 py-2 text-base outline-none focus:border-purple-400"
+                  className="w-full rounded border border-brand-gray-100 bg-brand-gray-50 px-3 py-2 text-base outline-none focus:border-purple-400"
                 />
               </label>
               <div className="mt-2 flex gap-2">
