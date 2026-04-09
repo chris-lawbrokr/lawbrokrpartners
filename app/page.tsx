@@ -17,7 +17,7 @@ export default function Home() {
       >
         <h1>LawBrokr Partners Dashboard</h1>
         <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
-          {user ? <span>{user.email}</span> : null}
+          {user ? <span>{user.firstName} {user.lastName}</span> : null}
           <button
             onClick={() => {
               void logout();

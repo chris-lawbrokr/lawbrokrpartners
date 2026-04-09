@@ -12,11 +12,13 @@ const REFRESH_TOKEN_EXPIRY = "7d";
 interface TokenPayload {
   sub: string;
   email: string;
-  name: string;
+  firstName: string;
+  lastName: string;
+  website: string;
 }
 
 export async function signAccessToken(payload: TokenPayload): Promise<string> {
-  return new SignJWT({ email: payload.email, name: payload.name })
+  return new SignJWT({ email: payload.email, firstName: payload.firstName, lastName: payload.lastName, website: payload.website })
     .setProtectedHeader({ alg: "HS256" })
     .setSubject(payload.sub)
     .setIssuedAt()

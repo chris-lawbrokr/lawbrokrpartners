@@ -2,40 +2,32 @@
 
 ## Getting Started
 
-### Local backend
+```bash
+cp .env.example .env.local
+```
+
+Fill in your `.env.local`:
+
+- `DATABASE_URL` — Neon PostgreSQL connection string
+- `JWT_SECRET` — run `openssl rand -base64 32` to generate one
+
+Then:
 
 ```bash
-cp .env.example .env.local   # adjust API URL if needed
 npm install
+npm run db:seed   # creates users table + test user
 npm run dev
 ```
 
-Set `AUTH_COOKIE_DOMAIN=""` on the backend so cookies are scoped to localhost.
-
 Open [http://localhost:3000](http://localhost:3000).
 
-### Staging API (api.lawbrokr.ca)
+Test login: `admin@lawbrokr.ca` / `password123`
 
-The staging API sets cookies with `domain=lawbrokr.ca` and the `Secure` flag, so the app must run on a `*.lawbrokr.ca` hostname over HTTPS.
+## Deployment (Vercel + Neon)
 
-```bash
-# 1. Install mkcert (one-time)
-brew install mkcert
-mkcert -install
-
-# 2. Generate certificates
-mkdir -p certs
-mkcert -key-file certs/key.pem -cert-file certs/cert.pem app.lawbrokr.ca dev.lawbrokr.ca
-
-# 3. Add /etc/hosts entries (one-time)
-sudo sh -c 'echo "127.0.0.1 app.lawbrokr.ca" >> /etc/hosts'
-sudo sh -c 'echo "127.0.0.1 dev.lawbrokr.ca" >> /etc/hosts'
-
-# 4. Run
-npm run dev:https
-```
-
-Open [https://app.lawbrokr.ca:3000](https://app.lawbrokr.ca:3000) or [https://dev.lawbrokr.ca:3000](https://dev.lawbrokr.ca:3000).
+1. Push to GitHub and import the repo in Vercel
+2. Add `DATABASE_URL` and `JWT_SECRET` as environment variables in Vercel project settings
+3. Run `npm run db:seed` locally (or via Vercel CLI) to create the table and seed data
 
 ## Scripts
 
@@ -48,16 +40,17 @@ Open [https://app.lawbrokr.ca:3000](https://app.lawbrokr.ca:3000) or [https://de
 | `npm run typecheck` | `tsc --noEmit`           | Type-check without emitting files |
 | `npm run lint`      | `eslint`                 | Run ESLint                        |
 | `npm run check`     | `tsc --noEmit && eslint` | Run both in sequence              |
+| `npm run db:seed`   | `tsx scripts/seed.ts`    | Create tables and seed test user  |
 
 ## Auth
 
-The browser calls the backend API directly using `credentials: "include"` for CORS cookie support. The access token is stored in-memory only, and the refresh token is an httpOnly cookie managed by the backend.
+The backend is built into the Next.js app as API routes (`/api/auth/*`) backed by Neon PostgreSQL. The access token is stored in-memory only, and the refresh token is an httpOnly cookie.
 
 ### Flow
 
 1. User submits email/password on `/login`
-2. Browser POSTs to `{API_BASE_URL}/auth/login` with `credentials: "include"`
-3. Backend returns a JWT access token and user info, and sets an httpOnly `refresh_token` cookie
+2. Browser POSTs to `/api/auth/login`
+3. API route verifies credentials against Neon, returns a JWT access token and user info, and sets an httpOnly `refresh_token` cookie
 4. AuthProvider stores the access token in a `useRef` (in-memory) and user info in React state
 5. Client-side `session` and `session_user` cookies are set for middleware route protection and page-reload persistence
 6. A refresh is scheduled based on the JWT `exp` claim (default: 60s before expiry)
@@ -65,20 +58,25 @@ The browser calls the backend API directly using `credentials: "include"` for CO
 
 ### Files
 
-| File                 | Purpose                                                |
-| -------------------- | ------------------------------------------------------ |
-| `middleware.ts`      | Route protection — redirects to `/login` if no session |
-| `lib/auth.tsx`       | `AuthProvider` context, `useAuth` hook, all auth logic |
-| `lib/api.ts`         | Fetch wrapper — adds Bearer token and `credentials`    |
-| `app/login/page.tsx` | Login form                                             |
+| File                          | Purpose                                                |
+| ----------------------------- | ------------------------------------------------------ |
+| `middleware.ts`               | Route protection — redirects to `/login` if no session |
+| `lib/auth.tsx`                | `AuthProvider` context, `useAuth` hook, all auth logic |
+| `lib/api.ts`                  | Fetch wrapper — adds Bearer token and `credentials`    |
+| `lib/db.ts`                   | Neon serverless database connection                    |
+| `lib/jwt.ts`                  | JWT signing and verification with `jose`               |
+| `app/api/auth/login/route.ts` | Login endpoint                                         |
+| `app/api/auth/refresh/route.ts` | Token refresh endpoint                              |
+| `app/api/auth/logout/route.ts`  | Logout endpoint                                     |
+| `app/login/page.tsx`          | Login form                                             |
 
 ### Cookies
 
-| Cookie          | Set by    | HttpOnly | TTL     | Purpose                           |
-| --------------- | --------- | -------- | ------- | --------------------------------- |
-| `refresh_token` | Backend   | Yes      | Backend | Used to obtain new access tokens  |
-| `session`       | Client JS | No       | 7 days  | Middleware auth gate              |
-| `session_user`  | Client JS | No       | 7 days  | Hydrate user state on page reload |
+| Cookie          | Set by    | HttpOnly | TTL    | Purpose                           |
+| --------------- | --------- | -------- | ------ | --------------------------------- |
+| `refresh_token` | API route | Yes      | 7 days | Used to obtain new access tokens  |
+| `session`       | Client JS | No       | 7 days | Middleware auth gate              |
+| `session_user`  | Client JS | No       | 7 days | Hydrate user state on page reload |
 
 ### Token Storage
 
@@ -86,6 +84,20 @@ The browser calls the backend API directly using `credentials: "include"` for CO
 | ------------- | ------------------ | ------------------------- | ----------------------------------------------- |
 | Access token  | In-memory `useRef` | Yes (same component tree) | Bearer token for API calls                      |
 | Refresh token | httpOnly cookie    | No                        | Sent automatically via `credentials: "include"` |
+
+## Database Schema
+
+**users** table (Neon PostgreSQL):
+
+| Column          | Type         | Notes              |
+| --------------- | ------------ | ------------------ |
+| `id`            | SERIAL PK    |                    |
+| `first_name`    | TEXT NOT NULL |                    |
+| `last_name`     | TEXT NOT NULL |                    |
+| `email`         | TEXT UNIQUE   |                    |
+| `password_hash` | TEXT NOT NULL | bcrypt             |
+| `website`       | TEXT NOT NULL | defaults to `''`   |
+| `created_at`    | TIMESTAMPTZ  | defaults to NOW()  |
 
 ## Linting & Type Checking
 
@@ -111,3 +123,9 @@ Uses `typescript-eslint` strict type-checked rules on top of the Next.js default
 - **`no-misused-promises`** — passing promises where booleans are expected
 - **`no-unsafe-*`** — `any` leaking into typed code
 - **`restrict-template-expressions`** — non-string types in template literals
+
+---
+
+TODO
+
+- add time filter to tables

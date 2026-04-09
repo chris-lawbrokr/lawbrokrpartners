@@ -14,8 +14,10 @@ import { apiFetch, setTokenGetter } from "./api";
 
 interface User {
   id: string;
+  firstName: string;
+  lastName: string;
   email: string;
-  name: string;
+  website: string;
 }
 
 interface AuthContextValue {

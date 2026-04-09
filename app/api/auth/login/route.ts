@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
 
   const sql = getDb();
   const rows = await sql`
-    SELECT id, email, name, password_hash FROM users WHERE email = ${email}
+    SELECT id, first_name, last_name, email, password_hash, website FROM users WHERE email = ${email}
   `;
 
   const user = rows[0];
@@ -32,13 +32,21 @@ export async function POST(request: NextRequest) {
   const accessToken = await signAccessToken({
     sub: userId,
     email: user.email as string,
-    name: user.name as string,
+    firstName: user.first_name as string,
+    lastName: user.last_name as string,
+    website: user.website as string,
   });
   const refreshToken = await signRefreshToken(userId);
 
   const response = NextResponse.json({
     access_token: accessToken,
-    user: { id: userId, email: String(user.email), name: String(user.name) },
+    user: {
+      id: userId,
+      firstName: String(user.first_name),
+      lastName: String(user.last_name),
+      email: String(user.email),
+      website: String(user.website),
+    },
   });
 
   const isProduction = process.env.NODE_ENV === "production";

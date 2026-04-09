@@ -19,13 +19,18 @@ async function main() {
 
   const sql = neon(databaseUrl);
 
+  // Drop old table if it exists with the old schema
+  await sql`DROP TABLE IF EXISTS users`;
+
   // Create users table
   await sql`
     CREATE TABLE IF NOT EXISTS users (
       id SERIAL PRIMARY KEY,
+      first_name TEXT NOT NULL,
+      last_name TEXT NOT NULL,
       email TEXT UNIQUE NOT NULL,
-      name TEXT NOT NULL,
       password_hash TEXT NOT NULL,
+      website TEXT NOT NULL DEFAULT '',
       created_at TIMESTAMPTZ DEFAULT NOW()
     )
   `;
@@ -36,8 +41,8 @@ async function main() {
   if (existing.length === 0) {
     const hash = await bcrypt.hash("password123", 12);
     await sql`
-      INSERT INTO users (email, name, password_hash)
-      VALUES ('admin@lawbrokr.ca', 'Admin User', ${hash})
+      INSERT INTO users (first_name, last_name, email, password_hash, website)
+      VALUES ('Admin', 'User', 'admin@lawbrokr.ca', ${hash}, 'https://lawbrokr.ca')
     `;
     console.log("Seeded test user: admin@lawbrokr.ca / password123");
   } else {
