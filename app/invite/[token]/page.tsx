@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import Link from "next/link";
+import SignupForm from "./signup-form";
 
 interface InviteInfo {
   firstName: string;
@@ -16,13 +16,7 @@ export default function InvitePage() {
   const router = useRouter();
   const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
-  const [email, setEmail] = useState("");
-  const [website, setWebsite] = useState("");
-  const [password, setPassword] = useState("");
-  const [agreeTerms, setAgreeTerms] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
+  const [inviteInfo, setInviteInfo] = useState<InviteInfo | null>(null);
   const [done, setDone] = useState(false);
 
   useEffect(() => {
@@ -36,51 +30,11 @@ export default function InvitePage() {
         return;
       }
       const data = (await res.json()) as InviteInfo;
-      setFirstName(data.firstName);
-      setLastName(data.lastName);
-      setEmail(data.email);
-      setWebsite(data.website);
+      setInviteInfo(data);
       setLoaded(true);
     }
     void load();
   }, [params.token]);
-
-  const handleSubmit = async (e: React.SyntheticEvent) => {
-    e.preventDefault();
-    setError(null);
-
-    if (!agreeTerms) {
-      setError("You must agree to the terms & conditions");
-      return;
-    }
-
-    if (password.length < 8) {
-      setError("Password must be at least 8 characters");
-      return;
-    }
-
-    setSubmitting(true);
-    try {
-      const res = await fetch(`/api/invite/${params.token}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ firstName, lastName, email, website, password }),
-      });
-
-      if (!res.ok) {
-        const data = (await res.json().catch(() => null)) as {
-          message?: string;
-        } | null;
-        throw new Error(data?.message ?? "Something went wrong");
-      }
-
-      setDone(true);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong");
-    } finally {
-      setSubmitting(false);
-    }
-  };
 
   if (done) {
     return (
@@ -88,6 +42,7 @@ export default function InvitePage() {
         <h1>Account Created</h1>
         <p>Your account has been set up. You can now sign in.</p>
         <button
+          type="button"
           onClick={() => {
             router.push("/login");
           }}
@@ -107,105 +62,43 @@ export default function InvitePage() {
     );
   }
 
-  if (!loaded) {
-    return <p>Loading...</p>;
+  if (!loaded || !inviteInfo) {
+    return (
+      <div className="flex h-screen w-screen items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-purple-200 border-t-purple-500" />
+      </div>
+    );
   }
 
   return (
-    <>
-      <div className="border-4 h-screen w-screen p-8 flex items-center justify-center">
-        <form
-          onSubmit={(e) => {
-            void handleSubmit(e);
-          }}
-          className="flex flex-col max-w-xl mx-auto border-4 p-8"
-        >
-          <h1>Sign Up</h1>
-          {error ? <p className="error">{error}</p> : null}
-          <label>
-            First Name *
-            <input
-              type="text"
-              value={firstName}
-              onChange={(e) => {
-                setFirstName(e.target.value);
-              }}
-              required
-              placeholder="John"
-            />
-          </label>
-
-          <label>
-            Last Name
-            <input
-              type="text"
-              value={lastName}
-              onChange={(e) => {
-                setLastName(e.target.value);
-              }}
-              placeholder="Doe"
-            />
-          </label>
-
-          <label>
-            Email *
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => {
-                setEmail(e.target.value);
-              }}
-              required
-              placeholder="Enter your email"
-            />
-          </label>
-
-          <label>
-            Password *
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => {
-                setPassword(e.target.value);
-              }}
-              required
-              minLength={8}
-              placeholder="Enter your password"
-            />
-          </label>
-
-          <label>
-            Website
-            <input
-              type="url"
-              value={website}
-              onChange={(e) => {
-                setWebsite(e.target.value);
-              }}
-              placeholder="https://example.com"
-            />
-          </label>
-
-          <label>
-            <input
-              type="checkbox"
-              checked={agreeTerms}
-              onChange={(e) => {
-                setAgreeTerms(e.target.checked);
-              }}
-            />
-            I agree to Lawbrokr&apos;s affiliate terms &amp; conditions *
-          </label>
-
-          <button type="submit" disabled={submitting}>
-            {submitting ? "Creating account..." : "Sign Up"}
-          </button>
-
-          <p>
-            Already have an account? <Link href="/login">Sign In</Link>
-          </p>
-        </form>
+    <div className="flex h-screen w-screen items-center justify-center">
+      <div
+        className="relative h-full w-full bg-cover bg-center"
+        style={{ backgroundImage: "url(/invite-bg.jpg)" }}
+      >
+        <div className="absolute top-0 left-0 p-8">
+          <img src="/Logo.svg" alt="LawBrokr" className="h-8" />
+          <h2 className="mt-6 text-4xl font-semibold text-black">
+            Welcome to Lawbrokr&apos;s
+            <br />
+            Partner Program
+          </h2>
+        </div>
       </div>
-    </>
+      <div className="h-full w-full flex items-center justify-center">
+        <div className="flex flex-col p-4">
+          <SignupForm
+            token={params.token}
+            initialFirstName={inviteInfo.firstName}
+            initialLastName={inviteInfo.lastName}
+            initialEmail={inviteInfo.email}
+            initialWebsite={inviteInfo.website}
+            onSuccess={() => {
+              setDone(true);
+            }}
+          />
+        </div>
+      </div>
+    </div>
   );
 }
