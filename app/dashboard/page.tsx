@@ -54,7 +54,7 @@ export default function PartnerDashboard() {
     : null;
 
   const loadData = useCallback(async () => {
-    const referralsRes = await apiFetch("/api/me/referrals");
+    const referralsRes = await apiFetch("/api/partner/referrals");
     if (!referralsRes.ok) return;
     const data = (await referralsRes.json()) as {
       referrals: MyReferral[];
@@ -334,7 +334,7 @@ function AddLeadModal({
     setSubmitting(true);
 
     try {
-      const res = await apiFetch("/api/me/referrals", {
+      const res = await apiFetch("/api/partner/referrals", {
         method: "POST",
         body: JSON.stringify({ leadName, leadEmail, leadPhone, notes }),
       });
@@ -472,7 +472,7 @@ function ReferralDetailModal({
     setError(null);
     setSubmitting(true);
     try {
-      const res = await apiFetch(`/api/me/referrals/${String(referral.id)}`, {
+      const res = await apiFetch(`/api/partner/referrals/${String(referral.id)}`, {
         method: "PATCH",
         body: JSON.stringify({ leadName, leadEmail, leadPhone, notes, submit }),
       });

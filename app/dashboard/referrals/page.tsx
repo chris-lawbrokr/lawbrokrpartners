@@ -18,7 +18,7 @@ export default function ReferralsPage() {
   const [loading, setLoading] = useState(true);
 
   const loadData = useCallback(async () => {
-    const dealsRes = await apiFetch("/api/me/deals");
+    const dealsRes = await apiFetch("/api/partner/deals");
     if (dealsRes.ok) {
       setDeals((await dealsRes.json()) as Deal[]);
     }

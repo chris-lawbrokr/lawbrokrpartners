@@ -37,7 +37,7 @@ export function Sidebar({ variant }: { variant: "admin" | "partner" }) {
     <aside className="flex h-screen w-56 shrink-0 flex-col border-r border-gray-200 bg-white">
       {/* Logo */}
       <div className="flex h-14 items-center px-5">
-        <span className="text-lg font-bold text-purple-600">LawBrokr</span>
+        <img src="/Logo.svg" alt="LawBrokr" className="h-6" />
       </div>
 
       {/* Nav */}
