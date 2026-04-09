@@ -1,0 +1,470 @@
+"use client";
+
+import { useCallback, useEffect, useState } from "react";
+import { useAuth } from "@/lib/auth";
+import { apiFetch } from "@/lib/api";
+
+interface MyReferral {
+  id: number;
+  referral_code: string;
+  source: string;
+  lead_name: string;
+  lead_email: string;
+  lead_phone: string;
+  notes: string;
+  status: string;
+  admin_note: string;
+  created_at: string;
+  reviewed_at: string | null;
+}
+
+interface Stats {
+  total: string;
+  approved: string;
+  submitted: string;
+  pending: string;
+}
+
+export default function PartnerDashboard() {
+  const { user, logout } = useAuth();
+  const [referrals, setReferrals] = useState<MyReferral[]>([]);
+  const [stats, setStats] = useState<Stats>({ total: "0", approved: "0", submitted: "0", pending: "0" });
+  const [loading, setLoading] = useState(true);
+  const [copied, setCopied] = useState(false);
+  const [showAddLead, setShowAddLead] = useState(false);
+  const [selectedReferral, setSelectedReferral] = useState<MyReferral | null>(null);
+
+  const referralLink = user?.referralCode
+    ? `https://www.lawbrokr.com/referral?ref=${user.referralCode}`
+    : null;
+
+  const loadData = useCallback(async () => {
+    const res = await apiFetch("/api/me/referrals");
+    if (res.ok) {
+      const data = (await res.json()) as { referrals: MyReferral[]; stats: Stats };
+      setReferrals(data.referrals);
+      setStats(data.stats);
+    }
+    setLoading(false);
+  }, []);
+
+  useEffect(() => {
+    if (user) void loadData();
+  }, [user, loadData]);
+
+  async function copyLink() {
+    if (!referralLink) return;
+    await navigator.clipboard.writeText(referralLink);
+    setCopied(true);
+    setTimeout(() => { setCopied(false); }, 2000);
+  }
+
+  function statusBadge(status: string) {
+    const styles: Record<string, string> = {
+      pending: "bg-gray-100 text-gray-600",
+      submitted: "bg-yellow-100 text-yellow-800",
+      approved: "bg-green-100 text-green-800",
+      rejected: "bg-red-100 text-red-800",
+    };
+    const labels: Record<string, string> = {
+      pending: "Link Click",
+      submitted: "Under Review",
+      approved: "Approved",
+      rejected: "Rejected",
+    };
+    return (
+      <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-semibold ${styles[status] ?? "bg-gray-100 text-gray-600"}`}>
+        {labels[status] ?? status}
+      </span>
+    );
+  }
+
+  return (
+    <main className="mx-auto max-w-[900px] p-8">
+      <header className="mb-8 flex items-center justify-between">
+        <h1 className="text-2xl font-bold">Partner Dashboard</h1>
+        <div className="flex items-center gap-4">
+          {user ? <span className="text-sm text-brand-gray-400">{user.firstName} {user.lastName}</span> : null}
+          <button
+            type="button"
+            onClick={() => { void logout(); }}
+            className="cursor-pointer rounded border border-brand-gray-100 bg-transparent px-4 py-2 text-sm"
+          >
+            Logout
+          </button>
+        </div>
+      </header>
+
+      {/* Referral Link Card */}
+      {referralLink ? (
+        <div className="mb-8 rounded-lg border border-gray-200 bg-white p-6">
+          <h2 className="mb-2 text-lg font-semibold">Your Referral Link</h2>
+          <p className="mb-4 text-sm text-brand-gray-300">
+            Share this link to earn referral commissions.
+          </p>
+          <div className="mb-4 break-all rounded-lg bg-brand-gray-50 p-3 text-sm text-brand-gray-600">
+            {referralLink}
+          </div>
+          <button
+            type="button"
+            onClick={() => { void copyLink(); }}
+            className="cursor-pointer rounded bg-purple-400 px-6 py-2.5 text-sm font-medium text-white"
+          >
+            {copied ? "Copied!" : "Copy Link"}
+          </button>
+        </div>
+      ) : null}
+
+      {/* Stats */}
+      <div className="mb-8 grid grid-cols-2 gap-4 sm:grid-cols-4">
+        <div className="rounded-lg border border-gray-200 bg-white p-5 text-center">
+          <p className="text-2xl font-bold text-purple-500">{stats.total}</p>
+          <p className="mt-1 text-xs text-brand-gray-300">Total</p>
+        </div>
+        <div className="rounded-lg border border-gray-200 bg-white p-5 text-center">
+          <p className="text-2xl font-bold text-yellow-600">{stats.submitted}</p>
+          <p className="mt-1 text-xs text-brand-gray-300">Under Review</p>
+        </div>
+        <div className="rounded-lg border border-gray-200 bg-white p-5 text-center">
+          <p className="text-2xl font-bold text-green-600">{stats.approved}</p>
+          <p className="mt-1 text-xs text-brand-gray-300">Approved</p>
+        </div>
+        <div className="rounded-lg border border-gray-200 bg-white p-5 text-center">
+          <p className="text-2xl font-bold text-brand-gray-300">{stats.pending}</p>
+          <p className="mt-1 text-xs text-brand-gray-300">Link Clicks</p>
+        </div>
+      </div>
+
+      {/* Actions */}
+      <div className="mb-4 flex items-center justify-between">
+        <h2 className="text-lg font-semibold">Leads &amp; Referrals</h2>
+        <button
+          type="button"
+          onClick={() => { setShowAddLead(true); }}
+          className="cursor-pointer rounded bg-purple-400 px-4 py-2 text-sm font-medium text-white"
+        >
+          Submit a Lead
+        </button>
+      </div>
+
+      {/* Referrals Table */}
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b-2 border-gray-200 text-left">
+              <th className="px-2 py-3">Source</th>
+              <th className="px-2 py-3">Lead</th>
+              <th className="px-2 py-3">Status</th>
+              <th className="px-2 py-3">Date</th>
+              <th className="px-2 py-3">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {loading || !user ? (
+              <tr>
+                <td colSpan={5} className="py-8 text-center">
+                  <div className="inline-block h-6 w-6 animate-spin rounded-full border-4 border-purple-200 border-t-purple-500" />
+                </td>
+              </tr>
+            ) : referrals.length === 0 ? (
+              <tr>
+                <td colSpan={5} className="py-6 text-center text-brand-gray-200">
+                  No referrals yet. Share your link or submit a lead.
+                </td>
+              </tr>
+            ) : referrals.map((r) => (
+              <tr key={r.id} className="border-b border-gray-200">
+                <td className="px-2 py-3">
+                  <span className={`text-xs font-medium ${r.source === "manual" ? "text-purple-500" : "text-brand-gray-300"}`}>
+                    {r.source === "manual" ? "Manual" : "Link"}
+                  </span>
+                </td>
+                <td className="px-2 py-3">
+                  {r.lead_name || r.lead_email ? (
+                    <div>
+                      {r.lead_name ? <span className="font-medium">{r.lead_name}</span> : null}
+                      {r.lead_email ? <span className="ml-2 text-brand-gray-300">{r.lead_email}</span> : null}
+                    </div>
+                  ) : (
+                    <span className="text-brand-gray-200">No details yet</span>
+                  )}
+                </td>
+                <td className="px-2 py-3">{statusBadge(r.status)}</td>
+                <td className="px-2 py-3 text-brand-gray-300">
+                  {new Date(r.created_at).toLocaleDateString()}
+                </td>
+                <td className="px-2 py-3">
+                  {r.status === "pending" || r.status === "submitted" ? (
+                    <button
+                      type="button"
+                      onClick={() => { setSelectedReferral(r); }}
+                      className="cursor-pointer text-xs font-medium text-purple-400 underline"
+                    >
+                      {r.status === "pending" ? "Add Details" : "View"}
+                    </button>
+                  ) : r.status === "approved" || r.status === "rejected" ? (
+                    <button
+                      type="button"
+                      onClick={() => { setSelectedReferral(r); }}
+                      className="cursor-pointer text-xs text-brand-gray-300 underline"
+                    >
+                      View
+                    </button>
+                  ) : null}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Add Lead Modal */}
+      {showAddLead ? (
+        <AddLeadModal
+          onClose={() => { setShowAddLead(false); }}
+          onCreated={() => { void loadData(); }}
+        />
+      ) : null}
+
+      {/* Referral Detail Modal */}
+      {selectedReferral ? (
+        <ReferralDetailModal
+          referral={selectedReferral}
+          onClose={() => { setSelectedReferral(null); }}
+          onUpdated={() => {
+            setSelectedReferral(null);
+            void loadData();
+          }}
+        />
+      ) : null}
+    </main>
+  );
+}
+
+function AddLeadModal({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
+  const [leadName, setLeadName] = useState("");
+  const [leadEmail, setLeadEmail] = useState("");
+  const [leadPhone, setLeadPhone] = useState("");
+  const [notes, setNotes] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleSubmit = async (e: React.SyntheticEvent) => {
+    e.preventDefault();
+    setError(null);
+    setSubmitting(true);
+
+    try {
+      const res = await apiFetch("/api/me/referrals", {
+        method: "POST",
+        body: JSON.stringify({ leadName, leadEmail, leadPhone, notes }),
+      });
+
+      if (!res.ok) {
+        const data = (await res.json().catch(() => null)) as { message?: string } | null;
+        throw new Error(data?.message ?? "Failed to submit lead");
+      }
+
+      onCreated();
+      onClose();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <div className="w-full max-w-[450px] rounded-lg bg-white p-8">
+        <h2 className="mb-1 text-lg font-semibold">Submit a Lead</h2>
+        <p className="mb-4 text-sm text-brand-gray-300">
+          Manually submit a referral lead for admin review.
+        </p>
+
+        {error ? (
+          <div className="mb-4 rounded bg-red-100 p-3 text-sm text-red-600">{error}</div>
+        ) : null}
+
+        <form onSubmit={(e) => { void handleSubmit(e); }} className="flex flex-col gap-3">
+          <label className="flex flex-col gap-1 text-sm font-medium">
+            Lead Name *
+            <input
+              type="text"
+              value={leadName}
+              onChange={(e) => { setLeadName(e.target.value); }}
+              required
+              className="w-full rounded border border-brand-gray-100 bg-brand-gray-50 px-3 py-2 text-base outline-none focus:border-purple-400"
+            />
+          </label>
+          <label className="flex flex-col gap-1 text-sm font-medium">
+            Lead Email
+            <input
+              type="email"
+              value={leadEmail}
+              onChange={(e) => { setLeadEmail(e.target.value); }}
+              className="w-full rounded border border-brand-gray-100 bg-brand-gray-50 px-3 py-2 text-base outline-none focus:border-purple-400"
+            />
+          </label>
+          <label className="flex flex-col gap-1 text-sm font-medium">
+            Lead Phone
+            <input
+              type="tel"
+              value={leadPhone}
+              onChange={(e) => { setLeadPhone(e.target.value); }}
+              className="w-full rounded border border-brand-gray-100 bg-brand-gray-50 px-3 py-2 text-base outline-none focus:border-purple-400"
+            />
+          </label>
+          <label className="flex flex-col gap-1 text-sm font-medium">
+            Notes
+            <textarea
+              value={notes}
+              onChange={(e) => { setNotes(e.target.value); }}
+              rows={3}
+              placeholder="How did you refer this person?"
+              className="w-full rounded border border-brand-gray-100 bg-brand-gray-50 px-3 py-2 text-base outline-none focus:border-purple-400"
+            />
+          </label>
+          <div className="mt-2 flex gap-2">
+            <button
+              type="submit"
+              disabled={submitting}
+              className="flex-1 cursor-pointer rounded bg-purple-400 py-3 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-70"
+            >
+              {submitting ? "Submitting..." : "Submit for Review"}
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              className="cursor-pointer rounded border border-brand-gray-100 bg-transparent px-4 py-3 text-sm"
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+function ReferralDetailModal({ referral, onClose, onUpdated }: { referral: MyReferral; onClose: () => void; onUpdated: () => void }) {
+  const [editing, setEditing] = useState(false);
+  const [leadName, setLeadName] = useState(referral.lead_name);
+  const [leadEmail, setLeadEmail] = useState(referral.lead_email);
+  const [leadPhone, setLeadPhone] = useState(referral.lead_phone);
+  const [notes, setNotes] = useState(referral.notes);
+  const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+
+  const canEdit = referral.status === "pending" || referral.status === "submitted";
+
+  const handleSave = async (submit: boolean) => {
+    setError(null);
+    setSubmitting(true);
+    try {
+      const res = await apiFetch(`/api/me/referrals/${String(referral.id)}`, {
+        method: "PATCH",
+        body: JSON.stringify({ leadName, leadEmail, leadPhone, notes, submit }),
+      });
+      if (!res.ok) {
+        const data = (await res.json().catch(() => null)) as { message?: string } | null;
+        throw new Error(data?.message ?? "Failed to update");
+      }
+      onUpdated();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <div className="w-full max-w-[500px] rounded-lg bg-white p-8">
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="text-lg font-semibold">Referral Details</h2>
+          <button type="button" onClick={onClose} className="cursor-pointer text-brand-gray-300 hover:text-brand-gray-600">&times;</button>
+        </div>
+
+        {error ? (
+          <div className="mb-4 rounded bg-red-100 p-3 text-sm text-red-600">{error}</div>
+        ) : null}
+
+        {referral.admin_note ? (
+          <div className="mb-4 rounded bg-brand-gray-50 p-3 text-sm">
+            <span className="font-medium text-brand-gray-400">Admin note:</span>{" "}
+            <span className="text-brand-gray-600">{referral.admin_note}</span>
+          </div>
+        ) : null}
+
+        {editing && canEdit ? (
+          <div className="flex flex-col gap-3">
+            <label className="flex flex-col gap-1 text-sm font-medium">
+              Lead Name
+              <input type="text" value={leadName} onChange={(e) => { setLeadName(e.target.value); }}
+                className="w-full rounded border border-brand-gray-100 bg-brand-gray-50 px-3 py-2 text-base outline-none focus:border-purple-400" />
+            </label>
+            <label className="flex flex-col gap-1 text-sm font-medium">
+              Lead Email
+              <input type="email" value={leadEmail} onChange={(e) => { setLeadEmail(e.target.value); }}
+                className="w-full rounded border border-brand-gray-100 bg-brand-gray-50 px-3 py-2 text-base outline-none focus:border-purple-400" />
+            </label>
+            <label className="flex flex-col gap-1 text-sm font-medium">
+              Lead Phone
+              <input type="tel" value={leadPhone} onChange={(e) => { setLeadPhone(e.target.value); }}
+                className="w-full rounded border border-brand-gray-100 bg-brand-gray-50 px-3 py-2 text-base outline-none focus:border-purple-400" />
+            </label>
+            <label className="flex flex-col gap-1 text-sm font-medium">
+              Notes
+              <textarea value={notes} onChange={(e) => { setNotes(e.target.value); }} rows={3}
+                className="w-full rounded border border-brand-gray-100 bg-brand-gray-50 px-3 py-2 text-base outline-none focus:border-purple-400" />
+            </label>
+            <div className="mt-2 flex gap-2">
+              <button type="button" disabled={submitting} onClick={() => { void handleSave(false); }}
+                className="flex-1 cursor-pointer rounded border border-brand-gray-100 bg-transparent py-3 text-sm disabled:opacity-70">
+                Save Draft
+              </button>
+              <button type="button" disabled={submitting} onClick={() => { void handleSave(true); }}
+                className="flex-1 cursor-pointer rounded bg-purple-400 py-3 text-sm font-medium text-white disabled:opacity-70">
+                {submitting ? "Saving..." : "Submit for Review"}
+              </button>
+            </div>
+          </div>
+        ) : (
+          <>
+            <div className="mb-6 space-y-3">
+              <DetailRow label="Source" value={referral.source === "manual" ? "Manual" : "Link Click"} />
+              <DetailRow label="Lead Name" value={referral.lead_name} />
+              <DetailRow label="Lead Email" value={referral.lead_email} />
+              <DetailRow label="Lead Phone" value={referral.lead_phone} />
+              <DetailRow label="Notes" value={referral.notes} />
+              <DetailRow label="Status" value={referral.status} />
+              <DetailRow label="Date" value={new Date(referral.created_at).toLocaleString()} />
+            </div>
+            {canEdit ? (
+              <button type="button" onClick={() => { setEditing(true); }}
+                className="w-full cursor-pointer rounded bg-purple-400 py-3 text-sm font-medium text-white">
+                Edit &amp; Submit for Review
+              </button>
+            ) : null}
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function DetailRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-baseline justify-between border-b border-gray-100 pb-2">
+      <span className="text-sm font-medium text-brand-gray-300">{label}</span>
+      <span className="max-w-[60%] text-right text-sm text-brand-gray-600">{value || <span className="text-brand-gray-200">-</span>}</span>
+    </div>
+  );
+}

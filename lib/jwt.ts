@@ -15,10 +15,19 @@ interface TokenPayload {
   firstName: string;
   lastName: string;
   website: string;
+  isAdmin: boolean;
+  referralCode: string;
 }
 
 export async function signAccessToken(payload: TokenPayload): Promise<string> {
-  return new SignJWT({ email: payload.email, firstName: payload.firstName, lastName: payload.lastName, website: payload.website })
+  return new SignJWT({
+    email: payload.email,
+    firstName: payload.firstName,
+    lastName: payload.lastName,
+    website: payload.website,
+    isAdmin: payload.isAdmin,
+    referralCode: payload.referralCode,
+  })
     .setProtectedHeader({ alg: "HS256" })
     .setSubject(payload.sub)
     .setIssuedAt()
@@ -41,4 +50,15 @@ export async function verifyRefreshToken(
   const { payload } = await jwtVerify(token, getSecret());
   if (!payload.sub) throw new Error("Invalid token");
   return { userId: payload.sub };
+}
+
+export async function verifyAccessToken(
+  token: string,
+): Promise<{ userId: string; isAdmin: boolean }> {
+  const { payload } = await jwtVerify(token, getSecret());
+  if (!payload.sub) throw new Error("Invalid token");
+  return {
+    userId: payload.sub,
+    isAdmin: (payload as Record<string, unknown>).isAdmin === true,
+  };
 }

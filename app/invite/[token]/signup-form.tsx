@@ -9,7 +9,7 @@ interface SignupFormProps {
   initialLastName: string;
   initialEmail: string;
   initialWebsite: string;
-  onSuccess: (referralLink: string) => void;
+  onSuccess: () => void;
 }
 
 export default function SignupForm({
@@ -64,8 +64,7 @@ export default function SignupForm({
         throw new Error(data?.message ?? "Something went wrong");
       }
 
-      const data = (await res.json()) as { referralLink: string };
-      onSuccess(data.referralLink);
+      onSuccess();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
     } finally {

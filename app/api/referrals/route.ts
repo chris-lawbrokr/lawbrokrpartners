@@ -1,21 +1,28 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { getDb } from "@/lib/db";
+import { requireAdmin } from "@/lib/api-auth";
 
-// GET: List all referrals (admin dashboard)
-export async function GET() {
+// GET: List all referrals (admin only)
+export async function GET(request: NextRequest) {
+  const auth = await requireAdmin(request);
+  if (auth instanceof NextResponse) return auth;
+
   const sql = getDb();
   const rows = await sql`
-    SELECT r.id, r.referral_code, r.status, r.created_at,
+    SELECT r.id, r.referral_code, r.source, r.lead_name, r.lead_email, r.lead_phone,
+           r.notes, r.status, r.admin_note, r.created_at, r.reviewed_at,
            u.first_name, u.last_name, u.email AS partner_email
     FROM referrals r
     JOIN users u ON u.id = r.partner_id
-    ORDER BY r.created_at DESC
+    ORDER BY
+      CASE r.status WHEN 'submitted' THEN 0 WHEN 'pending' THEN 1 ELSE 2 END,
+      r.created_at DESC
   `;
   return NextResponse.json(rows);
 }
 
-// POST: Webhook called by Flowbite site when "Book Now" is clicked
+// POST: Webhook called by Flowbite site (no auth required — public webhook)
 export async function POST(request: NextRequest) {
   const body = (await request.json()) as { ref?: string };
   const ref = body.ref;
@@ -26,7 +33,6 @@ export async function POST(request: NextRequest) {
 
   const sql = getDb();
 
-  // Look up the partner by referral code
   const users = await sql`
     SELECT id FROM users WHERE referral_code = ${ref} AND status = 'active'
   `;
@@ -36,8 +42,6 @@ export async function POST(request: NextRequest) {
   }
 
   const partnerId = users[0]?.id as number;
-
-  // Get IP and user agent from headers
   const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "";
   const userAgent = request.headers.get("user-agent") ?? "";
 

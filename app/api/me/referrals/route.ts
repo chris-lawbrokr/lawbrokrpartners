@@ -1,0 +1,70 @@
+import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
+import { getDb } from "@/lib/db";
+import { requireAuth } from "@/lib/api-auth";
+
+// GET: List the partner's own referrals
+export async function GET(request: NextRequest) {
+  const auth = await requireAuth(request);
+  if (auth instanceof NextResponse) return auth;
+
+  const sql = getDb();
+  const rows = await sql`
+    SELECT id, referral_code, source, lead_name, lead_email, lead_phone, notes, status, admin_note, created_at, reviewed_at
+    FROM referrals
+    WHERE partner_id = ${auth.userId}
+    ORDER BY created_at DESC
+  `;
+
+  const countRows = await sql`
+    SELECT
+      COUNT(*) AS total,
+      COUNT(*) FILTER (WHERE status = 'approved') AS approved,
+      COUNT(*) FILTER (WHERE status = 'submitted') AS submitted,
+      COUNT(*) FILTER (WHERE status = 'pending') AS pending
+    FROM referrals WHERE partner_id = ${auth.userId}
+  `;
+
+  return NextResponse.json({
+    referrals: rows,
+    stats: {
+      total: String(countRows[0]?.total ?? 0),
+      approved: String(countRows[0]?.approved ?? 0),
+      submitted: String(countRows[0]?.submitted ?? 0),
+      pending: String(countRows[0]?.pending ?? 0),
+    },
+  });
+}
+
+// POST: Partner creates a manual lead
+export async function POST(request: NextRequest) {
+  const auth = await requireAuth(request);
+  if (auth instanceof NextResponse) return auth;
+
+  const body = (await request.json()) as {
+    leadName?: string;
+    leadEmail?: string;
+    leadPhone?: string;
+    notes?: string;
+  };
+
+  if (!body.leadName && !body.leadEmail) {
+    return NextResponse.json(
+      { message: "Lead name or email is required" },
+      { status: 400 },
+    );
+  }
+
+  const sql = getDb();
+
+  // Get the partner's referral code
+  const userRows = await sql`SELECT referral_code FROM users WHERE id = ${auth.userId}`;
+  const referralCode = String(userRows[0]?.referral_code ?? "");
+
+  await sql`
+    INSERT INTO referrals (partner_id, referral_code, source, lead_name, lead_email, lead_phone, notes, status)
+    VALUES (${auth.userId}, ${referralCode}, 'manual', ${body.leadName ?? ""}, ${body.leadEmail ?? ""}, ${body.leadPhone ?? ""}, ${body.notes ?? ""}, 'submitted')
+  `;
+
+  return NextResponse.json({ ok: true }, { status: 201 });
+}

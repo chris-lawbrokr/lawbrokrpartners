@@ -23,7 +23,8 @@ export async function POST(request: NextRequest) {
 
   const sql = getDb();
   const rows = await sql`
-    SELECT id, first_name, last_name, email, website FROM users WHERE id = ${userId}
+    SELECT id, first_name, last_name, email, website, is_admin, referral_code
+    FROM users WHERE id = ${userId}
   `;
 
   const user = rows[0];
@@ -37,6 +38,8 @@ export async function POST(request: NextRequest) {
     firstName: user.first_name as string,
     lastName: user.last_name as string,
     website: user.website as string,
+    isAdmin: user.is_admin as boolean,
+    referralCode: String(user.referral_code ?? ""),
   });
   const newRefreshToken = await signRefreshToken(String(user.id));
 
@@ -48,6 +51,8 @@ export async function POST(request: NextRequest) {
       lastName: String(user.last_name),
       email: String(user.email),
       website: String(user.website),
+      isAdmin: Boolean(user.is_admin),
+      referralCode: String(user.referral_code ?? ""),
     },
   });
 

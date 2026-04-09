@@ -58,17 +58,17 @@ The backend is built into the Next.js app as API routes (`/api/auth/*`) backed b
 
 ### Files
 
-| File                          | Purpose                                                |
-| ----------------------------- | ------------------------------------------------------ |
-| `middleware.ts`               | Route protection — redirects to `/login` if no session |
-| `lib/auth.tsx`                | `AuthProvider` context, `useAuth` hook, all auth logic |
-| `lib/api.ts`                  | Fetch wrapper — adds Bearer token and `credentials`    |
-| `lib/db.ts`                   | Neon serverless database connection                    |
-| `lib/jwt.ts`                  | JWT signing and verification with `jose`               |
-| `app/api/auth/login/route.ts` | Login endpoint                                         |
-| `app/api/auth/refresh/route.ts` | Token refresh endpoint                              |
-| `app/api/auth/logout/route.ts`  | Logout endpoint                                     |
-| `app/login/page.tsx`          | Login form                                             |
+| File                            | Purpose                                                |
+| ------------------------------- | ------------------------------------------------------ |
+| `middleware.ts`                 | Route protection — redirects to `/login` if no session |
+| `lib/auth.tsx`                  | `AuthProvider` context, `useAuth` hook, all auth logic |
+| `lib/api.ts`                    | Fetch wrapper — adds Bearer token and `credentials`    |
+| `lib/db.ts`                     | Neon serverless database connection                    |
+| `lib/jwt.ts`                    | JWT signing and verification with `jose`               |
+| `app/api/auth/login/route.ts`   | Login endpoint                                         |
+| `app/api/auth/refresh/route.ts` | Token refresh endpoint                                 |
+| `app/api/auth/logout/route.ts`  | Logout endpoint                                        |
+| `app/login/page.tsx`            | Login form                                             |
 
 ### Cookies
 
@@ -89,15 +89,15 @@ The backend is built into the Next.js app as API routes (`/api/auth/*`) backed b
 
 **users** table (Neon PostgreSQL):
 
-| Column          | Type         | Notes              |
-| --------------- | ------------ | ------------------ |
-| `id`            | SERIAL PK    |                    |
-| `first_name`    | TEXT NOT NULL |                    |
-| `last_name`     | TEXT NOT NULL |                    |
-| `email`         | TEXT UNIQUE   |                    |
-| `password_hash` | TEXT NOT NULL | bcrypt             |
-| `website`       | TEXT NOT NULL | defaults to `''`   |
-| `created_at`    | TIMESTAMPTZ  | defaults to NOW()  |
+| Column          | Type          | Notes             |
+| --------------- | ------------- | ----------------- |
+| `id`            | SERIAL PK     |                   |
+| `first_name`    | TEXT NOT NULL |                   |
+| `last_name`     | TEXT NOT NULL |                   |
+| `email`         | TEXT UNIQUE   |                   |
+| `password_hash` | TEXT NOT NULL | bcrypt            |
+| `website`       | TEXT NOT NULL | defaults to `''`  |
+| `created_at`    | TIMESTAMPTZ   | defaults to NOW() |
 
 ## Linting & Type Checking
 
@@ -126,6 +126,6 @@ Uses `typescript-eslint` strict type-checked rules on top of the Next.js default
 
 ---
 
-TODO
-
-- add time filter to tables
+```
+rm -rf .next && npm run dev
+```

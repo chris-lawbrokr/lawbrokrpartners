@@ -55,14 +55,23 @@ async function main() {
   console.log("Created invites table");
 
   // Create referrals table
+  // source: 'link' (from referral link) or 'manual' (partner submitted)
+  // status: 'pending' -> 'submitted' -> 'approved' or 'rejected'
   await sql`
     CREATE TABLE IF NOT EXISTS referrals (
       id SERIAL PRIMARY KEY,
       partner_id INTEGER NOT NULL REFERENCES users(id),
       referral_code TEXT NOT NULL,
+      source TEXT NOT NULL DEFAULT 'link',
+      lead_name TEXT NOT NULL DEFAULT '',
+      lead_email TEXT NOT NULL DEFAULT '',
+      lead_phone TEXT NOT NULL DEFAULT '',
+      notes TEXT NOT NULL DEFAULT '',
       visitor_ip TEXT,
       visitor_user_agent TEXT,
       status TEXT NOT NULL DEFAULT 'pending',
+      admin_note TEXT NOT NULL DEFAULT '',
+      reviewed_at TIMESTAMPTZ,
       created_at TIMESTAMPTZ DEFAULT NOW()
     )
   `;

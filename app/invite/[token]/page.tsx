@@ -39,12 +39,12 @@ export default function InvitePage() {
   if (done) {
     return (
       <div className="flex h-screen w-screen items-center justify-center bg-brand-gray-50">
-        <div className="max-w-sm rounded-2xl bg-white p-10 text-center shadow-sm">
+        <div className="max-w-md rounded-2xl bg-white p-10 text-center shadow-sm">
           <h1 className="mb-3 text-2xl font-bold text-brand-gray-600">
             Account Created
           </h1>
           <p className="mb-6 text-sm text-brand-gray-300">
-            Your account has been set up. You can now sign in.
+            Your account has been set up.
           </p>
           <button
             type="button"

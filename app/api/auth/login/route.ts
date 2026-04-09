@@ -17,7 +17,8 @@ export async function POST(request: NextRequest) {
 
   const sql = getDb();
   const rows = await sql`
-    SELECT id, first_name, last_name, email, password_hash, website FROM users WHERE email = ${email}
+    SELECT id, first_name, last_name, email, password_hash, website, is_admin, referral_code
+    FROM users WHERE email = ${email}
   `;
 
   const user = rows[0];
@@ -35,6 +36,8 @@ export async function POST(request: NextRequest) {
     firstName: user.first_name as string,
     lastName: user.last_name as string,
     website: user.website as string,
+    isAdmin: user.is_admin as boolean,
+    referralCode: String(user.referral_code ?? ""),
   });
   const refreshToken = await signRefreshToken(userId);
 
@@ -46,6 +49,8 @@ export async function POST(request: NextRequest) {
       lastName: String(user.last_name),
       email: String(user.email),
       website: String(user.website),
+      isAdmin: Boolean(user.is_admin),
+      referralCode: String(user.referral_code ?? ""),
     },
   });
 
@@ -55,7 +60,7 @@ export async function POST(request: NextRequest) {
     secure: isProduction,
     sameSite: isProduction ? "none" : "lax",
     path: "/",
-    maxAge: 7 * 24 * 60 * 60, // 7 days
+    maxAge: 7 * 24 * 60 * 60,
   });
 
   return response;

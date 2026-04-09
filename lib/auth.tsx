@@ -18,6 +18,8 @@ interface User {
   lastName: string;
   email: string;
   website: string;
+  isAdmin: boolean;
+  referralCode: string;
 }
 
 interface AuthContextValue {
@@ -178,7 +180,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setCookie("session", "1", SESSION_COOKIE_DAYS);
       setCookie("session_user", JSON.stringify(data.user), SESSION_COOKIE_DAYS);
       scheduleRefresh(data.access_token);
-      router.push("/");
+      router.push(data.user.isAdmin ? "/admin" : "/dashboard");
     },
     [router, scheduleRefresh],
   );

@@ -1,11 +1,15 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { getDb } from "@/lib/db";
+import { requireAdmin } from "@/lib/api-auth";
 
 export async function GET(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  const auth = await requireAdmin(request);
+  if (auth instanceof NextResponse) return auth;
+
   const { id } = await params;
   const sql = getDb();
 
@@ -25,6 +29,9 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  const auth = await requireAdmin(request);
+  if (auth instanceof NextResponse) return auth;
+
   const { id } = await params;
   const body = (await request.json()) as {
     firstName?: string;
@@ -40,7 +47,6 @@ export async function PATCH(
     return NextResponse.json({ message: "User not found" }, { status: 404 });
   }
 
-  // Check email uniqueness if changing email
   if (body.email) {
     const dup = await sql`SELECT id FROM users WHERE email = ${body.email} AND id != ${id}`;
     if (dup.length > 0) {
@@ -61,14 +67,17 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  const auth = await requireAdmin(request);
+  if (auth instanceof NextResponse) return auth;
+
   const { id } = await params;
   const sql = getDb();
 
-  // Delete invites first (foreign key)
   await sql`DELETE FROM invites WHERE user_id = ${id}`;
+  await sql`DELETE FROM referrals WHERE partner_id = ${id}`;
   await sql`DELETE FROM users WHERE id = ${id} AND is_admin = false`;
 
   return NextResponse.json({ ok: true });
