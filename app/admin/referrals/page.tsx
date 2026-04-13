@@ -22,14 +22,19 @@ interface Referral {
   partner_email: string;
 }
 
-type StatusFilter = "all" | "submitted" | "pending" | "approved" | "rejected";
+const columns = [
+  { key: "submitted", label: "Under Review", color: "border-purple-400" },
+  { key: "approved", label: "Confirmed", color: "border-purple-600" },
+  { key: "rejected", label: "Rejected", color: "border-purple-200" },
+] as const;
 
 export default function AdminReferralsPage() {
   const { user } = useAuth();
   const [referrals, setReferrals] = useState<Referral[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<StatusFilter>("all");
-  const [reviewReferral, setReviewReferral] = useState<Referral | null>(null);
+  const [selectedReferral, setSelectedReferral] = useState<Referral | null>(
+    null,
+  );
 
   const loadData = useCallback(async () => {
     const res = await apiFetch("/api/referrals");
@@ -43,174 +48,95 @@ export default function AdminReferralsPage() {
     if (user) void loadData();
   }, [user, loadData]);
 
-  const filtered =
-    filter === "all"
-      ? referrals
-      : referrals.filter((r) => r.status === filter);
-
-  const counts = {
-    all: referrals.length,
-    submitted: referrals.filter((r) => r.status === "submitted").length,
-    pending: referrals.filter((r) => r.status === "pending").length,
-    approved: referrals.filter((r) => r.status === "approved").length,
-    rejected: referrals.filter((r) => r.status === "rejected").length,
+  const grouped = {
+    submitted: referrals.filter((r) => r.status === "submitted"),
+    approved: referrals.filter((r) => r.status === "approved"),
+    rejected: referrals.filter((r) => r.status === "rejected"),
   };
 
-  const filters: { value: StatusFilter; label: string }[] = [
-    { value: "all", label: "All" },
-    { value: "submitted", label: "Needs Review" },
-    { value: "pending", label: "Link Clicks" },
-    { value: "approved", label: "Approved" },
-    { value: "rejected", label: "Rejected" },
-  ];
-
   return (
-    <main className="mx-auto max-w-[1100px] p-8">
+    <main className="p-8">
       <h1 className="mb-6 text-2xl font-bold">Referrals</h1>
 
-      {/* Filter tabs */}
-      <div className="mb-4 flex gap-2">
-        {filters.map((f) => (
-          <button
-            key={f.value}
-            type="button"
-            onClick={() => {
-              setFilter(f.value);
-            }}
-            className={`cursor-pointer rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
-              filter === f.value
-                ? "bg-purple-400 text-white"
-                : "bg-brand-gray-50 text-brand-gray-400 hover:bg-brand-gray-100"
-            }`}
-          >
-            {f.label} ({counts[f.value]})
-          </button>
-        ))}
-      </div>
-
-      {/* Table */}
-      <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b-2 border-gray-200 text-left">
-              <th className="px-4 py-3">Partner</th>
-              <th className="px-4 py-3">Source</th>
-              <th className="px-4 py-3">Lead</th>
-              <th className="px-4 py-3">Status</th>
-              <th className="px-4 py-3">Date</th>
-              <th className="px-4 py-3">Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading ? (
-              <tr>
-                <td colSpan={6} className="py-10 text-center">
-                  <div className="inline-block h-6 w-6 animate-spin rounded-full border-2 border-purple-200 border-t-purple-500" />
-                </td>
-              </tr>
-            ) : filtered.length === 0 ? (
-              <tr>
-                <td
-                  colSpan={6}
-                  className="py-10 text-center text-brand-gray-200"
+      {loading ? (
+        <div className="flex justify-center py-16">
+          <div className="h-6 w-6 animate-spin rounded-full border-2 border-purple-200 border-t-purple-500" />
+        </div>
+      ) : (
+        <div className="flex gap-4 overflow-x-auto pb-4">
+          {columns.map((col) => {
+            const items = grouped[col.key];
+            return (
+              <div key={col.key} className="flex min-w-[250px] flex-1 flex-col">
+                <div
+                  className={`mb-3 flex items-center justify-between border-t-2 ${col.color} pt-3`}
                 >
-                  {referrals.length === 0
-                    ? "No referrals yet."
-                    : "No referrals match this filter."}
-                </td>
-              </tr>
-            ) : (
-              filtered.map((r) => (
-                <tr
-                  key={r.id}
-                  className={`border-b border-gray-200 ${r.status === "submitted" ? "bg-purple-50" : ""}`}
-                >
-                  <td className="px-4 py-3">
-                    {`${r.first_name} ${r.last_name}`.trim() ||
-                      r.partner_email}
-                  </td>
-                  <td className="px-4 py-3">
-                    <span
-                      className={`text-xs font-medium ${r.source === "manual" ? "text-purple-500" : "text-brand-gray-300"}`}
-                    >
-                      {r.source === "manual" ? "Manual" : "Link"}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3">
-                    {r.lead_name || r.lead_email ? (
-                      <div>
-                        {r.lead_name ? (
-                          <span className="font-medium">{r.lead_name}</span>
-                        ) : null}
-                        {r.lead_email ? (
-                          <span className="ml-1 text-brand-gray-300">
-                            {r.lead_email}
+                  <h2 className="text-sm font-semibold">{col.label}</h2>
+                  <span className="rounded-full bg-brand-gray-50 px-2 py-0.5 text-xs font-medium text-brand-gray-400">
+                    {items.length}
+                  </span>
+                </div>
+                <div className="flex flex-1 flex-col gap-2">
+                  {items.length === 0 ? (
+                    <div className="rounded-lg border border-dashed border-gray-200 py-8 text-center text-xs text-brand-gray-200">
+                      No referrals
+                    </div>
+                  ) : (
+                    items.map((r) => (
+                      <button
+                        key={r.id}
+                        type="button"
+                        onClick={() => {
+                          setSelectedReferral(r);
+                        }}
+                        className="cursor-pointer rounded-lg border border-gray-200 bg-white p-3 text-left transition-shadow hover:shadow-md"
+                      >
+                        <p className="text-sm font-medium text-brand-gray-500">
+                          {`${r.first_name} ${r.last_name}`.trim() ||
+                            r.partner_email}
+                        </p>
+                        {r.lead_name || r.lead_email ? (
+                          <p className="mt-1 truncate text-xs text-brand-gray-300">
+                            {r.lead_name || r.lead_email}
+                          </p>
+                        ) : (
+                          <p className="mt-1 text-xs text-brand-gray-200">
+                            No lead details
+                          </p>
+                        )}
+                        <div className="mt-2 flex items-center justify-between">
+                          <span
+                            className={`text-xs font-medium ${r.source === "manual" ? "text-purple-500" : "text-brand-gray-300"}`}
+                          >
+                            {r.source === "manual" ? "Manual" : "Link"}
                           </span>
-                        ) : null}
-                      </div>
-                    ) : (
-                      <span className="text-brand-gray-200">-</span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3">
-                    <StatusBadge status={r.status} />
-                  </td>
-                  <td className="px-4 py-3 text-brand-gray-300">
-                    {new Date(r.created_at).toLocaleDateString()}
-                  </td>
-                  <td className="px-4 py-3">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setReviewReferral(r);
-                      }}
-                      className="cursor-pointer text-xs font-medium text-purple-400 underline"
-                    >
-                      {r.status === "submitted" ? "Review" : "View"}
-                    </button>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+                          <span className="text-xs text-brand-gray-200">
+                            {new Date(r.created_at).toLocaleDateString()}
+                          </span>
+                        </div>
+                      </button>
+                    ))
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
 
-      {reviewReferral ? (
+      {selectedReferral ? (
         <ReferralModal
-          referral={reviewReferral}
+          referral={selectedReferral}
           onClose={() => {
-            setReviewReferral(null);
+            setSelectedReferral(null);
           }}
           onUpdated={() => {
-            setReviewReferral(null);
+            setSelectedReferral(null);
             void loadData();
           }}
         />
       ) : null}
     </main>
-  );
-}
-
-function StatusBadge({ status }: { status: string }) {
-  const styles: Record<string, string> = {
-    submitted: "bg-purple-100 text-purple-800",
-    approved: "bg-green-100 text-green-800",
-    rejected: "bg-red-100 text-red-800",
-    pending: "bg-gray-100 text-gray-600",
-  };
-  const labels: Record<string, string> = {
-    submitted: "Needs Review",
-    pending: "Link Click",
-    approved: "Approved",
-    rejected: "Rejected",
-  };
-  return (
-    <span
-      className={`inline-block rounded-full px-2 py-0.5 text-xs font-semibold ${styles[status] ?? "bg-gray-100 text-gray-600"}`}
-    >
-      {labels[status] ?? status}
-    </span>
   );
 }
 
@@ -292,7 +218,6 @@ function ReferralModal({
               </span>
             </div>
           ) : null}
-          <DetailRow label="Status" value={referral.status} />
           <DetailRow
             label="Date"
             value={new Date(referral.created_at).toLocaleDateString()}
@@ -334,7 +259,7 @@ function ReferralModal({
                 onClick={() => {
                   void handleReview("approved");
                 }}
-                className="flex-1 cursor-pointer rounded bg-green-600 py-2.5 text-sm font-medium text-white disabled:opacity-70"
+                className="flex-1 cursor-pointer rounded bg-purple-500 py-2.5 text-sm font-medium text-white disabled:opacity-70"
               >
                 Approve
               </button>
@@ -344,7 +269,7 @@ function ReferralModal({
                 onClick={() => {
                   void handleReview("rejected");
                 }}
-                className="flex-1 cursor-pointer rounded bg-red-600 py-2.5 text-sm font-medium text-white disabled:opacity-70"
+                className="flex-1 cursor-pointer rounded bg-purple-200 py-2.5 text-sm font-medium text-purple-600 disabled:opacity-70"
               >
                 Reject
               </button>
