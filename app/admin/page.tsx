@@ -1,26 +1,23 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useCallback, useEffect, useState } from "react";
-import { Bell, Trash2, Plus, X } from "lucide-react";
+import {
+  Bell,
+  Trash2,
+  Plus,
+  X,
+  DollarSign,
+  Users,
+  UserCheck,
+  Link as LinkIcon,
+  Clock,
+  ChevronRight,
+} from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { apiFetch } from "@/lib/api";
 
-interface Referral {
-  id: number;
-  referral_code: string;
-  source: string;
-  lead_name: string;
-  lead_email: string;
-  lead_phone: string;
-  notes: string;
-  status: string;
-  admin_note: string;
-  created_at: string;
-  reviewed_at: string | null;
-  first_name: string;
-  last_name: string;
-  partner_email: string;
-}
+const Chart = dynamic(() => import("react-apexcharts"), { ssr: false });
 
 interface RewardItem {
   id?: number;
@@ -31,258 +28,399 @@ interface RewardItem {
   sort_order: number;
 }
 
+interface TopPromoter {
+  name: string;
+  referrals: number;
+  approved: number;
+}
+
+interface DashboardStats {
+  revenue: number;
+  referrals: number;
+  payingCustomers: number;
+  newReferrals: number;
+  clicks: number;
+  promoters: number;
+  dailyReferrals: { date: string; count: number }[];
+  topPromoters: TopPromoter[];
+  pendingActions: {
+    promoters: number;
+    commissions: number;
+    referrals: number;
+  };
+}
+
 type PlanType = "monthly" | "yearly";
+
+const defaultStats: DashboardStats = {
+  revenue: 0,
+  referrals: 0,
+  payingCustomers: 0,
+  newReferrals: 0,
+  clicks: 0,
+  promoters: 0,
+  dailyReferrals: [],
+  topPromoters: [],
+  pendingActions: { promoters: 0, commissions: 0, referrals: 0 },
+};
 
 export default function Home() {
   const { user } = useAuth();
-  const [referrals, setReferrals] = useState<Referral[]>([]);
   const [rewards, setRewards] = useState<RewardItem[]>([]);
+  const [stats, setStats] = useState<DashboardStats>(defaultStats);
+  const [loading, setLoading] = useState(true);
 
   const loadData = useCallback(async () => {
-    const [referralsRes, rewardsRes] = await Promise.all([
-      apiFetch("/api/referrals"),
+    const [rewardsRes, statsRes] = await Promise.all([
       apiFetch("/api/rewards"),
+      apiFetch("/api/admin/stats"),
     ]);
-    if (!referralsRes.ok) return;
-    const newReferrals = (await referralsRes.json()) as Referral[];
     if (rewardsRes.ok) setRewards((await rewardsRes.json()) as RewardItem[]);
-    setReferrals(newReferrals);
+    if (statsRes.ok) setStats((await statsRes.json()) as DashboardStats);
+    setLoading(false);
   }, []);
 
   useEffect(() => {
     if (user) void loadData();
   }, [user, loadData]);
 
+  // Build 30-day date range for chart
+  const chartDates: string[] = [];
+  const chartCounts: number[] = [];
+  const now = new Date();
+  for (let i = 29; i >= 0; i--) {
+    const d = new Date(now);
+    d.setDate(d.getDate() - i);
+    const key = d.toISOString().slice(0, 10);
+    chartDates.push(
+      d.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+    );
+    const match = stats.dailyReferrals.find((r) => r.date.slice(0, 10) === key);
+    chartCounts.push(match?.count ?? 0);
+  }
+
+  const Spinner = () => (
+    <div className="flex justify-center py-4">
+      <div className="h-5 w-5 animate-spin rounded-full border-2 border-purple-200 border-t-purple-500" />
+    </div>
+  );
+
   return (
-    <main className="mx-auto max-w-[1100px] p-8">
+    <main className="mx-auto max-w-[1200px] p-8">
       <h1 className="mb-8 text-2xl font-bold">Dashboard</h1>
 
-      <div className="mb-8 grid grid-cols-2 gap-4 sm:grid-cols-4">
-        <div className="rounded-lg border border-gray-200 bg-white p-5">
-          <p className="text-xs text-brand-gray-300">Revenue generated</p>
-          <p className="mt-1 text-2xl font-bold">$0</p>
+      {/* Top stat cards */}
+      <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
+        <StatCard
+          icon={<DollarSign className="h-5 w-5 text-purple-600" />}
+          iconBg="bg-purple-100"
+          label="Revenue generated"
+          value={loading ? null : `$${stats.revenue.toLocaleString()}`}
+        />
+        <StatCard
+          icon={<LinkIcon className="h-5 w-5 text-purple-600" />}
+          iconBg="bg-purple-100"
+          label="Referrals"
+          value={loading ? null : String(stats.referrals)}
+        />
+        <StatCard
+          icon={<UserCheck className="h-5 w-5 text-purple-600" />}
+          iconBg="bg-purple-100"
+          label="Paying customers"
+          value={loading ? null : String(stats.payingCustomers)}
+        />
+        <StatCard
+          icon={<Users className="h-5 w-5 text-purple-600" />}
+          iconBg="bg-purple-100"
+          label="Promoters"
+          value={loading ? null : String(stats.promoters)}
+        />
+      </div>
+
+      {/* Middle row: Overview chart + right sidebar */}
+      <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-3">
+        {/* Overview chart */}
+        <div className="flex min-w-0 flex-col overflow-hidden rounded-lg border border-gray-200 bg-white p-5 md:col-span-2">
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="text-base font-semibold">Overview</h2>
+            <span className="rounded border border-gray-200 px-3 py-1 text-xs text-brand-gray-300">
+              Last 30 Days
+            </span>
+          </div>
+          {loading ? (
+            <div className="flex justify-center py-10">
+              <div className="h-5 w-5 animate-spin rounded-full border-2 border-purple-200 border-t-purple-500" />
+            </div>
+          ) : (
+            <div className="-mx-2 flex w-full flex-1 flex-col justify-center">
+              <Chart
+                type="area"
+                width="100%"
+                height={250}
+                series={[{ name: "Referrals", data: chartCounts }]}
+                options={{
+                  chart: {
+                    toolbar: { show: false },
+                    sparkline: { enabled: false },
+                    fontFamily: "inherit",
+                  },
+                  stroke: { curve: "smooth", width: 2 },
+                  colors: ["#7634d9"],
+                  fill: {
+                    type: "gradient",
+                    gradient: {
+                      shadeIntensity: 1,
+                      opacityFrom: 0.4,
+                      opacityTo: 0.05,
+                      stops: [0, 100],
+                    },
+                  },
+                  xaxis: {
+                    categories: chartDates,
+                    labels: {
+                      style: { fontSize: "10px", colors: "#a8a7ad" },
+                      rotate: 0,
+                      hideOverlappingLabels: true,
+                    },
+                    axisBorder: { show: false },
+                    axisTicks: { show: false },
+                  },
+                  yaxis: {
+                    labels: {
+                      style: { fontSize: "10px", colors: "#a8a7ad" },
+                    },
+                  },
+                  grid: {
+                    borderColor: "#f1f0f1",
+                    strokeDashArray: 4,
+                  },
+                  dataLabels: { enabled: false },
+                  tooltip: { theme: "light" },
+                }}
+              />
+            </div>
+          )}
         </div>
-        <div className="rounded-lg border border-gray-200 bg-white p-5">
-          <p className="text-xs text-brand-gray-300">Referrals</p>
-          <p className="mt-1 text-2xl font-bold">0</p>
-        </div>
-        <div className="rounded-lg border border-gray-200 bg-white p-5">
-          <p className="text-xs text-brand-gray-300">Paying customers</p>
-          <p className="mt-1 text-2xl font-bold">0</p>
-        </div>
-        <div className="rounded-lg border border-gray-200 bg-white p-5">
-          <p className="text-xs text-brand-gray-300">Promoters</p>
-          <p className="mt-1 text-2xl font-bold">0</p>
+
+        {/* Right sidebar */}
+        <div className="flex flex-col gap-4">
+          {/* Trendings */}
+          <div className="rounded-lg border border-gray-200 bg-white p-5">
+            <div className="mb-3 flex items-center justify-between">
+              <h2 className="text-base font-semibold">Top Promoters</h2>
+              <span className="text-xs text-brand-gray-300">Last 30 days</span>
+            </div>
+            {loading ? (
+              <Spinner />
+            ) : stats.topPromoters.length === 0 ? (
+              <p className="text-sm text-brand-gray-200">No promoters yet.</p>
+            ) : (
+              <div className="space-y-3">
+                {stats.topPromoters.map((p, i) => (
+                  <div key={i} className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-brand-gray-500">
+                      {p.name}
+                    </span>
+                    <span className="text-sm text-brand-gray-300">
+                      {p.referrals} referral{p.referrals !== 1 ? "s" : ""}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Commissions donut */}
+          <div className="rounded-lg border border-gray-200 bg-white p-5">
+            <div className="mb-1 flex items-center justify-between">
+              <h2 className="text-base font-semibold">Commissions</h2>
+              <span className="text-xs text-brand-gray-300">All time</span>
+            </div>
+            {loading ? (
+              <Spinner />
+            ) : (
+              <>
+                <Chart
+                  type="donut"
+                  height={200}
+                  series={[0, 0]}
+                  options={{
+                    chart: { fontFamily: "inherit" },
+                    labels: ["Paid", "Unpaid"],
+                    colors: ["#b29af1", "#7634d9"],
+                    plotOptions: {
+                      pie: {
+                        donut: {
+                          size: "70%",
+                          labels: {
+                            show: true,
+                            name: {
+                              show: true,
+                              fontSize: "12px",
+                              color: "#83818a",
+                            },
+                            value: {
+                              show: true,
+                              fontSize: "20px",
+                              fontWeight: "700",
+                              formatter: () => "$0",
+                            },
+                            total: {
+                              show: true,
+                              label: "Total earned",
+                              fontSize: "12px",
+                              color: "#83818a",
+                              formatter: () => "$0",
+                            },
+                          },
+                        },
+                      },
+                    },
+                    dataLabels: { enabled: false },
+                    legend: { show: false },
+                    stroke: { width: 0 },
+                  }}
+                />
+                <div className="mt-2 space-y-1.5">
+                  <div className="flex items-center justify-between text-sm">
+                    <div className="flex items-center gap-2">
+                      <span className="inline-block h-2.5 w-2.5 rounded-full bg-brand-gray-200" />
+                      Total earned
+                    </div>
+                    <span className="font-medium">$0</span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <div className="flex items-center gap-2">
+                      <span className="inline-block h-2.5 w-2.5 rounded-full bg-purple-200" />
+                      Paid
+                    </div>
+                    <span className="font-medium">$0</span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <div className="flex items-center gap-2">
+                      <span className="inline-block h-2.5 w-2.5 rounded-full bg-purple-400" />
+                      Unpaid
+                    </div>
+                    <span className="font-medium">$0</span>
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
         </div>
       </div>
 
+      {/* Pending actions */}
+      <div className="mb-6 rounded-lg border border-gray-200 bg-white p-5">
+        <h2 className="mb-4 text-base font-semibold">Pending actions</h2>
+        {loading ? (
+          <Spinner />
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-3">
+            <PendingItem
+              icon={<Clock className="h-4 w-4 text-purple-500" />}
+              label="Pending promoters"
+              count={stats.pendingActions.promoters}
+            />
+            <PendingItem
+              icon={<DollarSign className="h-4 w-4 text-purple-500" />}
+              label="Pending commissions"
+              count={stats.pendingActions.commissions}
+            />
+            <PendingItem
+              icon={<LinkIcon className="h-4 w-4 text-purple-500" />}
+              label="Pending referrals"
+              count={stats.pendingActions.referrals}
+            />
+          </div>
+        )}
+      </div>
+
+      {/* Rewards */}
       <RewardCard
         rewards={rewards}
+        loading={loading}
         onUpdated={() => {
           void loadData();
         }}
       />
-
-      {/* Referrals & Leads */}
-      {referrals.length > 0 ? (
-        <div className="mt-10">
-          <h2 className="mb-4 text-xl font-semibold">Referrals &amp; Leads</h2>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b-2 border-gray-200 text-left">
-                  <th className="px-2 py-3">Partner</th>
-                  <th className="px-2 py-3">Source</th>
-                  <th className="px-2 py-3">Lead</th>
-                  <th className="px-2 py-3">Status</th>
-                  <th className="px-2 py-3">Date</th>
-                  <th className="px-2 py-3">Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {referrals.map((r) => (
-                  <tr
-                    key={r.id}
-                    className={`border-b border-gray-200 ${r.status === "submitted" ? "bg-yellow-50" : ""}`}
-                  >
-                    <td className="px-2 py-3">
-                      {`${r.first_name} ${r.last_name}`.trim() ||
-                        r.partner_email}
-                    </td>
-                    <td className="px-2 py-3">
-                      <span
-                        className={`text-xs font-medium ${r.source === "manual" ? "text-purple-500" : "text-brand-gray-300"}`}
-                      >
-                        {r.source === "manual" ? "Manual" : "Link"}
-                      </span>
-                    </td>
-                    <td className="px-2 py-3">
-                      {r.lead_name || r.lead_email ? (
-                        <div>
-                          {r.lead_name ? (
-                            <span className="font-medium">{r.lead_name}</span>
-                          ) : null}
-                          {r.lead_email ? (
-                            <span className="ml-1 text-brand-gray-300">
-                              {r.lead_email}
-                            </span>
-                          ) : null}
-                        </div>
-                      ) : (
-                        <span className="text-brand-gray-200">-</span>
-                      )}
-                    </td>
-                    <td className="px-2 py-3">
-                      <span
-                        className={`inline-block rounded-full px-2 py-0.5 text-xs font-semibold ${
-                          r.status === "submitted"
-                            ? "bg-yellow-100 text-yellow-800"
-                            : r.status === "approved"
-                              ? "bg-green-100 text-green-800"
-                              : r.status === "rejected"
-                                ? "bg-red-100 text-red-800"
-                                : "bg-gray-100 text-gray-600"
-                        }`}
-                      >
-                        {r.status === "submitted"
-                          ? "Needs Review"
-                          : r.status === "pending"
-                            ? "Link Click"
-                            : r.status}
-                      </span>
-                    </td>
-                    <td className="px-2 py-3 text-brand-gray-300">
-                      {new Date(r.created_at).toLocaleDateString()}
-                    </td>
-                    <td className="px-2 py-3">
-                      {r.status === "submitted" ? (
-                        <ReviewActions
-                          referral={r}
-                          onReviewed={() => {
-                            void loadData();
-                          }}
-                        />
-                      ) : null}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      ) : null}
-
     </main>
   );
 }
 
-function ReviewActions({
-  referral,
-  onReviewed,
+/* ─── Small helper components ─── */
+
+function StatCard({
+  icon,
+  iconBg,
+  label,
+  value,
 }: {
-  referral: Referral;
-  onReviewed: () => void;
+  icon: React.ReactNode;
+  iconBg: string;
+  label: string;
+  value: string | null;
 }) {
-  const [expanded, setExpanded] = useState(false);
-  const [adminNote, setAdminNote] = useState("");
-  const [submitting, setSubmitting] = useState(false);
-
-  const handleReview = async (status: "approved" | "rejected") => {
-    setSubmitting(true);
-    try {
-      await apiFetch(`/api/referrals/${String(referral.id)}`, {
-        method: "PATCH",
-        body: JSON.stringify({ status, adminNote }),
-      });
-      onReviewed();
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  if (!expanded) {
-    return (
-      <button
-        type="button"
-        onClick={() => {
-          setExpanded(true);
-        }}
-        className="cursor-pointer text-xs font-medium text-purple-400 underline"
-      >
-        Review
-      </button>
-    );
-  }
-
   return (
-    <div className="min-w-[250px] rounded border border-gray-200 bg-white p-3">
-      {referral.notes ? (
-        <div className="mb-2 text-xs">
-          <span className="font-medium text-brand-gray-400">
-            Partner notes:
-          </span>{" "}
-          <span className="text-brand-gray-600">{referral.notes}</span>
-        </div>
-      ) : null}
-      {referral.lead_phone ? (
-        <div className="mb-2 text-xs text-brand-gray-400">
-          Phone: {referral.lead_phone}
-        </div>
-      ) : null}
-      <input
-        type="text"
-        value={adminNote}
-        onChange={(e) => {
-          setAdminNote(e.target.value);
-        }}
-        placeholder="Admin note (optional)"
-        className="mb-2 w-full rounded border border-brand-gray-100 bg-brand-gray-50 px-2 py-1 text-xs outline-none"
-      />
-      <div className="flex gap-2">
-        <button
-          type="button"
-          disabled={submitting}
-          onClick={() => {
-            void handleReview("approved");
-          }}
-          className="flex-1 cursor-pointer rounded bg-green-600 px-2 py-1 text-xs font-medium text-white disabled:opacity-70"
-        >
-          Approve
-        </button>
-        <button
-          type="button"
-          disabled={submitting}
-          onClick={() => {
-            void handleReview("rejected");
-          }}
-          className="flex-1 cursor-pointer rounded bg-red-600 px-2 py-1 text-xs font-medium text-white disabled:opacity-70"
-        >
-          Reject
-        </button>
-        <button
-          type="button"
-          onClick={() => {
-            setExpanded(false);
-          }}
-          className="cursor-pointer text-xs text-brand-gray-300"
-        >
-          Cancel
-        </button>
+    <div className="flex items-center gap-4 rounded-lg border border-gray-200 bg-white p-5">
+      <div
+        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${iconBg}`}
+      >
+        {icon}
+      </div>
+      <div>
+        <p className="text-xs text-brand-gray-300">{label}</p>
+        {value === null ? (
+          <div className="mt-1">
+            <div className="h-5 w-5 animate-spin rounded-full border-2 border-purple-200 border-t-purple-500" />
+          </div>
+        ) : (
+          <p className="mt-0.5 text-2xl font-bold">{value}</p>
+        )}
       </div>
     </div>
   );
 }
 
+function PendingItem({
+  icon,
+  label,
+  count,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  count: number;
+}) {
+  return (
+    <div className="flex items-center justify-between px-4 py-3">
+      <div className="flex items-center gap-3">
+        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-purple-50">
+          {icon}
+        </div>
+        <div>
+          <p className="text-sm text-brand-gray-400">{label}</p>
+          <p className="text-lg font-bold">{count}</p>
+        </div>
+      </div>
+      <ChevronRight className="h-4 w-4 text-brand-gray-200" />
+    </div>
+  );
+}
+
+/* ─── Rewards Card + Modal ─── */
+
 function RewardCard({
   rewards,
+  loading,
   onUpdated,
 }: {
   rewards: RewardItem[];
+  loading: boolean;
   onUpdated: () => void;
 }) {
   const [showModal, setShowModal] = useState(false);
 
-  const isEmpty = rewards.length === 0;
+  const isEmpty = !loading && rewards.length === 0;
 
   return (
     <>
@@ -299,7 +437,11 @@ function RewardCard({
             {isEmpty ? "Set up" : "Edit"}
           </button>
         </div>
-        {isEmpty ? (
+        {loading ? (
+          <div className="mt-4 flex justify-center">
+            <div className="h-5 w-5 animate-spin rounded-full border-2 border-purple-200 border-t-purple-500" />
+          </div>
+        ) : isEmpty ? (
           <p className="mt-2 text-sm text-brand-gray-200">
             No reward configured yet. Click &quot;Set up&quot; to define what
             partners earn.
@@ -357,11 +499,13 @@ function RewardsSetupModal({
   );
   const [submitting, setSubmitting] = useState(false);
 
-  function updateItem(index: number, field: "description" | "plan", value: string) {
+  function updateItem(
+    index: number,
+    field: "description" | "plan",
+    value: string,
+  ) {
     setItems((prev) =>
-      prev.map((item, i) =>
-        i === index ? { ...item, [field]: value } : item,
-      ),
+      prev.map((item, i) => (i === index ? { ...item, [field]: value } : item)),
     );
   }
 
@@ -403,7 +547,6 @@ function RewardsSetupModal({
       }}
     >
       <div className="w-full max-w-[500px] rounded-lg bg-white">
-        {/* Header */}
         <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
           <h2 className="text-lg font-semibold">Rewards setup</h2>
           <button
@@ -423,10 +566,7 @@ function RewardsSetupModal({
 
           <div className="space-y-3">
             {items.map((item, index) => (
-              <div
-                key={index}
-                className="flex items-start gap-2"
-              >
+              <div key={index} className="flex items-start gap-2">
                 <div className="flex flex-1 flex-col gap-2 sm:flex-row">
                   <input
                     type="text"
@@ -455,7 +595,7 @@ function RewardsSetupModal({
                   onClick={() => {
                     removeItem(index);
                   }}
-                  className="mt-2 cursor-pointer rounded p-1 text-brand-gray-300 hover:bg-red-50 hover:text-red-500"
+                  className="mt-2 cursor-pointer rounded p-1 text-brand-gray-300 hover:bg-purple-50 hover:text-purple-500"
                   aria-label="Remove reward"
                 >
                   <Trash2 className="h-4 w-4" />
@@ -474,7 +614,6 @@ function RewardsSetupModal({
           </button>
         </div>
 
-        {/* Footer */}
         <div className="flex items-center justify-between border-t border-gray-200 px-6 py-4">
           <button
             type="button"

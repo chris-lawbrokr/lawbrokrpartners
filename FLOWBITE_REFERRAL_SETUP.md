@@ -14,17 +14,17 @@ Add this to your Flowbite `/referral` page:
 
 ```javascript
 // On page load — grab and store the referral code
-const ref = new URLSearchParams(window.location.search).get('ref');
+const ref = new URLSearchParams(window.location.search).get("ref");
 if (ref) {
-  localStorage.setItem('lawbrokr_ref', ref);
+  localStorage.setItem("lawbrokr_ref", ref);
 }
 
 // When "Book Now" is clicked
-const storedRef = localStorage.getItem('lawbrokr_ref');
+const storedRef = localStorage.getItem("lawbrokr_ref");
 if (storedRef) {
-  fetch('https://YOUR_PARTNERS_APP_URL/api/referrals', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+  fetch("https://YOUR_PARTNERS_APP_URL/api/referrals", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ ref: storedRef }),
   });
 }
