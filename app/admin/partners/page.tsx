@@ -44,7 +44,9 @@ export default function PartnersPage() {
   async function copyLink(token: string) {
     await navigator.clipboard.writeText(getInviteLink(token));
     setCopiedToken(token);
-    setTimeout(() => { setCopiedToken(null); }, 2000);
+    setTimeout(() => {
+      setCopiedToken(null);
+    }, 2000);
   }
 
   return (
@@ -53,7 +55,9 @@ export default function PartnersPage() {
         <h1 className="text-2xl font-bold">Partners</h1>
         <button
           type="button"
-          onClick={() => { setShowCreateModal(true); }}
+          onClick={() => {
+            setShowCreateModal(true);
+          }}
           className="cursor-pointer rounded bg-purple-400 px-4 py-2 text-sm font-medium text-white"
         >
           Create Partner
@@ -82,91 +86,112 @@ export default function PartnersPage() {
               </tr>
             ) : users.length === 0 ? (
               <tr>
-                <td colSpan={7} className="py-6 text-center text-brand-gray-200">
+                <td
+                  colSpan={7}
+                  className="py-6 text-center text-brand-gray-200"
+                >
                   No partners yet. Create one to get started.
                 </td>
               </tr>
-            ) : users.map((u) => (
-              <tr
-                key={u.id}
-                className="cursor-pointer border-b border-gray-200 transition-colors hover:bg-brand-gray-50"
-                onClick={() => { setSelectedUser(u); }}
-              >
-                <td className="px-2 py-3">
-                  {u.first_name || u.last_name
-                    ? `${u.first_name} ${u.last_name}`.trim()
-                    : <span className="text-brand-gray-200">-</span>}
-                </td>
-                <td className="px-2 py-3">
-                  {u.email || <span className="text-brand-gray-200">-</span>}
-                </td>
-                <td className="px-2 py-3">
-                  {u.website ? (
+            ) : (
+              users.map((u) => (
+                <tr
+                  key={u.id}
+                  className="cursor-pointer border-b border-gray-200 transition-colors hover:bg-brand-gray-50"
+                  onClick={() => {
+                    setSelectedUser(u);
+                  }}
+                >
+                  <td className="px-2 py-3">
+                    {u.first_name || u.last_name ? (
+                      `${u.first_name} ${u.last_name}`.trim()
+                    ) : (
+                      <span className="text-brand-gray-200">-</span>
+                    )}
+                  </td>
+                  <td className="px-2 py-3">
+                    {u.email || <span className="text-brand-gray-200">-</span>}
+                  </td>
+                  <td className="px-2 py-3">
+                    {u.website ? (
+                      <span
+                        className="text-purple-400 underline"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          window.open(u.website, "_blank");
+                        }}
+                      >
+                        {u.website}
+                      </span>
+                    ) : (
+                      <span className="text-brand-gray-200">-</span>
+                    )}
+                  </td>
+                  <td className="px-2 py-3">
                     <span
-                      className="text-purple-400 underline"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        window.open(u.website, "_blank");
-                      }}
+                      className={`inline-block rounded-full px-2 py-0.5 text-xs font-semibold ${
+                        u.status === "active"
+                          ? "bg-green-100 text-green-800"
+                          : "bg-yellow-100 text-yellow-800"
+                      }`}
                     >
-                      {u.website}
+                      {u.status === "active" ? "Active" : "Pending"}
                     </span>
-                  ) : (
-                    <span className="text-brand-gray-200">-</span>
-                  )}
-                </td>
-                <td className="px-2 py-3">
-                  <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-semibold ${
-                    u.status === "active"
-                      ? "bg-green-100 text-green-800"
-                      : "bg-yellow-100 text-yellow-800"
-                  }`}>
-                    {u.status === "active" ? "Active" : "Pending"}
-                  </span>
-                </td>
-                <td className="px-2 py-3 text-center">
-                  {u.status === "active" ? (
-                    <span className="text-sm font-medium text-brand-gray-600">{u.referral_count}</span>
-                  ) : (
-                    <span className="text-brand-gray-200">-</span>
-                  )}
-                </td>
-                <td className="px-2 py-3 text-brand-gray-300">
-                  {new Date(u.created_at).toLocaleDateString()}
-                </td>
-                <td className="px-2 py-3">
-                  {u.invite_token && u.status === "pending" ? (
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        void copyLink(u.invite_token ?? "");
-                      }}
-                      className="cursor-pointer rounded border border-brand-gray-100 bg-transparent px-2 py-1 text-xs"
-                    >
-                      {copiedToken === u.invite_token ? "Copied!" : "Copy Link"}
-                    </button>
-                  ) : u.status === "active" ? (
-                    <span className="text-xs text-brand-gray-200">Used</span>
-                  ) : null}
-                </td>
-              </tr>
-            ))}
+                  </td>
+                  <td className="px-2 py-3 text-center">
+                    {u.status === "active" ? (
+                      <span className="text-sm font-medium text-brand-gray-600">
+                        {u.referral_count}
+                      </span>
+                    ) : (
+                      <span className="text-brand-gray-200">-</span>
+                    )}
+                  </td>
+                  <td className="px-2 py-3 text-brand-gray-300">
+                    {new Date(u.created_at).toLocaleDateString()}
+                  </td>
+                  <td className="px-2 py-3">
+                    {u.invite_token && u.status === "pending" ? (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          void copyLink(u.invite_token ?? "");
+                        }}
+                        className="cursor-pointer rounded border border-brand-gray-100 bg-transparent px-2 py-1 text-xs"
+                      >
+                        {copiedToken === u.invite_token
+                          ? "Copied!"
+                          : "Copy Link"}
+                      </button>
+                    ) : u.status === "active" ? (
+                      <span className="text-xs text-brand-gray-200">Used</span>
+                    ) : null}
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>
 
       {showCreateModal ? (
         <CreatePartnerModal
-          onClose={() => { setShowCreateModal(false); }}
-          onCreated={() => { void loadData(); }}
+          onClose={() => {
+            setShowCreateModal(false);
+          }}
+          onCreated={() => {
+            void loadData();
+          }}
         />
       ) : null}
 
       {selectedUser ? (
         <UserDetailModal
           user={selectedUser}
-          onClose={() => { setSelectedUser(null); }}
+          onClose={() => {
+            setSelectedUser(null);
+          }}
           onUpdated={() => {
             setSelectedUser(null);
             void loadData();
@@ -177,7 +202,15 @@ export default function PartnersPage() {
   );
 }
 
-function UserDetailModal({ user, onClose, onUpdated }: { user: PartnerUser; onClose: () => void; onUpdated: () => void }) {
+function UserDetailModal({
+  user,
+  onClose,
+  onUpdated,
+}: {
+  user: PartnerUser;
+  onClose: () => void;
+  onUpdated: () => void;
+}) {
   const [editing, setEditing] = useState(false);
   const [firstName, setFirstName] = useState(user.first_name);
   const [lastName, setLastName] = useState(user.last_name);
@@ -197,7 +230,9 @@ function UserDetailModal({ user, onClose, onUpdated }: { user: PartnerUser; onCl
         body: JSON.stringify({ firstName, lastName, email, website }),
       });
       if (!res.ok) {
-        const data = (await res.json().catch(() => null)) as { message?: string } | null;
+        const data = (await res.json().catch(() => null)) as {
+          message?: string;
+        } | null;
         throw new Error(data?.message ?? "Failed to update");
       }
       onUpdated();
@@ -221,7 +256,9 @@ function UserDetailModal({ user, onClose, onUpdated }: { user: PartnerUser; onCl
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
-      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
     >
       <div className="w-full max-w-[500px] rounded-lg bg-white p-8">
         <div className="mb-6 flex items-center justify-between">
@@ -236,7 +273,9 @@ function UserDetailModal({ user, onClose, onUpdated }: { user: PartnerUser; onCl
         </div>
 
         {error ? (
-          <div className="mb-4 rounded bg-red-100 p-3 text-sm text-red-600">{error}</div>
+          <div className="mb-4 rounded bg-red-100 p-3 text-sm text-red-600">
+            {error}
+          </div>
         ) : null}
 
         {editing ? (
@@ -247,7 +286,9 @@ function UserDetailModal({ user, onClose, onUpdated }: { user: PartnerUser; onCl
                 <input
                   type="text"
                   value={firstName}
-                  onChange={(e) => { setFirstName(e.target.value); }}
+                  onChange={(e) => {
+                    setFirstName(e.target.value);
+                  }}
                   className="w-full rounded border border-brand-gray-100 bg-brand-gray-50 px-3 py-2 text-base outline-none focus:border-purple-400"
                 />
               </label>
@@ -256,7 +297,9 @@ function UserDetailModal({ user, onClose, onUpdated }: { user: PartnerUser; onCl
                 <input
                   type="text"
                   value={lastName}
-                  onChange={(e) => { setLastName(e.target.value); }}
+                  onChange={(e) => {
+                    setLastName(e.target.value);
+                  }}
                   className="w-full rounded border border-brand-gray-100 bg-brand-gray-50 px-3 py-2 text-base outline-none focus:border-purple-400"
                 />
               </label>
@@ -266,7 +309,9 @@ function UserDetailModal({ user, onClose, onUpdated }: { user: PartnerUser; onCl
               <input
                 type="email"
                 value={email}
-                onChange={(e) => { setEmail(e.target.value); }}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                }}
                 className="rounded border border-brand-gray-100 bg-brand-gray-50 px-3 py-2 text-base outline-none focus:border-purple-400"
               />
             </label>
@@ -275,7 +320,9 @@ function UserDetailModal({ user, onClose, onUpdated }: { user: PartnerUser; onCl
               <input
                 type="url"
                 value={website}
-                onChange={(e) => { setWebsite(e.target.value); }}
+                onChange={(e) => {
+                  setWebsite(e.target.value);
+                }}
                 className="rounded border border-brand-gray-100 bg-brand-gray-50 px-3 py-2 text-base outline-none focus:border-purple-400"
               />
             </label>
@@ -283,14 +330,18 @@ function UserDetailModal({ user, onClose, onUpdated }: { user: PartnerUser; onCl
               <button
                 type="button"
                 disabled={submitting}
-                onClick={() => { void handleSave(); }}
+                onClick={() => {
+                  void handleSave();
+                }}
                 className="flex-1 cursor-pointer rounded bg-purple-400 py-3 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-70"
               >
                 {submitting ? "Saving..." : "Save Changes"}
               </button>
               <button
                 type="button"
-                onClick={() => { setEditing(false); }}
+                onClick={() => {
+                  setEditing(false);
+                }}
                 className="cursor-pointer rounded border border-brand-gray-100 bg-transparent px-4 py-3 text-sm"
               >
                 Cancel
@@ -300,20 +351,34 @@ function UserDetailModal({ user, onClose, onUpdated }: { user: PartnerUser; onCl
         ) : (
           <>
             <div className="mb-6 space-y-3">
-              <DetailRow label="Name" value={`${user.first_name} ${user.last_name}`.trim()} />
+              <DetailRow
+                label="Name"
+                value={`${user.first_name} ${user.last_name}`.trim()}
+              />
               <DetailRow label="Email" value={user.email} />
               <DetailRow label="Website" value={user.website} />
-              <DetailRow label="Status" value={user.status === "active" ? "Active" : "Pending"} />
+              <DetailRow
+                label="Status"
+                value={user.status === "active" ? "Active" : "Pending"}
+              />
               <DetailRow label="Referrals" value={user.referral_count} />
               {user.referral_code ? (
-                <DetailRow label="Referral Link" value={`https://www.lawbrokr.com/referral?ref=${user.referral_code}`} />
+                <DetailRow
+                  label="Referral Link"
+                  value={`https://www.lawbrokr.com/referral?ref=${user.referral_code}`}
+                />
               ) : null}
-              <DetailRow label="Created" value={new Date(user.created_at).toLocaleDateString()} />
+              <DetailRow
+                label="Created"
+                value={new Date(user.created_at).toLocaleDateString()}
+              />
             </div>
             <div className="flex gap-2">
               <button
                 type="button"
-                onClick={() => { setEditing(true); }}
+                onClick={() => {
+                  setEditing(true);
+                }}
                 className="flex-1 cursor-pointer rounded bg-purple-400 py-3 text-sm font-medium text-white"
               >
                 Edit
@@ -322,7 +387,9 @@ function UserDetailModal({ user, onClose, onUpdated }: { user: PartnerUser; onCl
                 <button
                   type="button"
                   disabled={submitting}
-                  onClick={() => { void handleDelete(); }}
+                  onClick={() => {
+                    void handleDelete();
+                  }}
                   className="flex-1 cursor-pointer rounded bg-red-600 py-3 text-sm font-medium text-white disabled:opacity-70"
                 >
                   {submitting ? "Deleting..." : "Confirm Delete"}
@@ -330,7 +397,9 @@ function UserDetailModal({ user, onClose, onUpdated }: { user: PartnerUser; onCl
               ) : (
                 <button
                   type="button"
-                  onClick={() => { setConfirmDelete(true); }}
+                  onClick={() => {
+                    setConfirmDelete(true);
+                  }}
                   className="flex-1 cursor-pointer rounded border border-red-300 bg-transparent py-3 text-sm font-medium text-red-600"
                 >
                   Delete
@@ -348,12 +417,20 @@ function DetailRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-baseline justify-between border-b border-gray-100 pb-2">
       <span className="text-sm font-medium text-brand-gray-300">{label}</span>
-      <span className="text-sm text-brand-gray-600">{value || <span className="text-brand-gray-200">-</span>}</span>
+      <span className="text-sm text-brand-gray-600">
+        {value || <span className="text-brand-gray-200">-</span>}
+      </span>
     </div>
   );
 }
 
-function CreatePartnerModal({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
+function CreatePartnerModal({
+  onClose,
+  onCreated,
+}: {
+  onClose: () => void;
+  onCreated: () => void;
+}) {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
@@ -381,7 +458,9 @@ function CreatePartnerModal({ onClose, onCreated }: { onClose: () => void; onCre
       });
 
       if (!res.ok) {
-        const data = (await res.json().catch(() => null)) as { message?: string } | null;
+        const data = (await res.json().catch(() => null)) as {
+          message?: string;
+        } | null;
         throw new Error(data?.message ?? "Failed to create partner");
       }
 
@@ -399,13 +478,17 @@ function CreatePartnerModal({ onClose, onCreated }: { onClose: () => void; onCre
     if (!inviteLink) return;
     await navigator.clipboard.writeText(inviteLink);
     setCopied(true);
-    setTimeout(() => { setCopied(false); }, 2000);
+    setTimeout(() => {
+      setCopied(false);
+    }, 2000);
   }
 
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
-      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
     >
       <div className="w-full max-w-[450px] rounded-lg bg-white p-8">
         {inviteLink ? (
@@ -420,7 +503,9 @@ function CreatePartnerModal({ onClose, onCreated }: { onClose: () => void; onCre
             <div className="flex gap-2">
               <button
                 type="button"
-                onClick={() => { void copyLink(); }}
+                onClick={() => {
+                  void copyLink();
+                }}
                 className="flex-1 cursor-pointer rounded bg-purple-400 py-3 text-sm font-medium text-white"
               >
                 {copied ? "Copied!" : "Copy Link"}
@@ -438,21 +523,31 @@ function CreatePartnerModal({ onClose, onCreated }: { onClose: () => void; onCre
           <>
             <h2 className="mb-1 text-lg font-semibold">Create Partner</h2>
             <p className="mb-4 text-sm text-brand-gray-300">
-              Optionally pre-fill partner details for reference. The partner can update these when they sign up.
+              Optionally pre-fill partner details for reference. The partner can
+              update these when they sign up.
             </p>
 
             {error ? (
-              <div className="mb-4 rounded bg-red-100 p-3 text-sm text-red-600">{error}</div>
+              <div className="mb-4 rounded bg-red-100 p-3 text-sm text-red-600">
+                {error}
+              </div>
             ) : null}
 
-            <form onSubmit={(e) => { void handleSubmit(e); }} className="flex flex-col gap-3">
+            <form
+              onSubmit={(e) => {
+                void handleSubmit(e);
+              }}
+              className="flex flex-col gap-3"
+            >
               <div className="flex gap-3">
                 <label className="flex min-w-0 flex-1 flex-col gap-1 text-sm font-medium">
                   First Name
                   <input
                     type="text"
                     value={firstName}
-                    onChange={(e) => { setFirstName(e.target.value); }}
+                    onChange={(e) => {
+                      setFirstName(e.target.value);
+                    }}
                     placeholder="Optional"
                     className="w-full rounded border border-brand-gray-100 bg-brand-gray-50 px-3 py-2 text-base outline-none focus:border-purple-400"
                   />
@@ -462,7 +557,9 @@ function CreatePartnerModal({ onClose, onCreated }: { onClose: () => void; onCre
                   <input
                     type="text"
                     value={lastName}
-                    onChange={(e) => { setLastName(e.target.value); }}
+                    onChange={(e) => {
+                      setLastName(e.target.value);
+                    }}
                     placeholder="Optional"
                     className="w-full rounded border border-brand-gray-100 bg-brand-gray-50 px-3 py-2 text-base outline-none focus:border-purple-400"
                   />
@@ -473,7 +570,9 @@ function CreatePartnerModal({ onClose, onCreated }: { onClose: () => void; onCre
                 <input
                   type="email"
                   value={email}
-                  onChange={(e) => { setEmail(e.target.value); }}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                  }}
                   placeholder="Optional"
                   className="w-full rounded border border-brand-gray-100 bg-brand-gray-50 px-3 py-2 text-base outline-none focus:border-purple-400"
                 />
@@ -483,7 +582,9 @@ function CreatePartnerModal({ onClose, onCreated }: { onClose: () => void; onCre
                 <input
                   type="url"
                   value={website}
-                  onChange={(e) => { setWebsite(e.target.value); }}
+                  onChange={(e) => {
+                    setWebsite(e.target.value);
+                  }}
                   placeholder="Optional"
                   className="w-full rounded border border-brand-gray-100 bg-brand-gray-50 px-3 py-2 text-base outline-none focus:border-purple-400"
                 />
@@ -511,3 +612,4 @@ function CreatePartnerModal({ onClose, onCreated }: { onClose: () => void; onCre
     </div>
   );
 }
+``;

@@ -15,7 +15,8 @@ Then:
 
 ```bash
 npm install
-npm run db:seed   # creates users table + test user
+# creates users table + test user
+npm run db:seed
 npm run dev
 ```
 
@@ -130,17 +131,11 @@ Uses `typescript-eslint` strict type-checked rules on top of the Next.js default
 rm -rf .next && npm run dev
 ```
 
----
-
 left to right drag drop status cards
-
----
 
 rewards
 
----
-
-min details
+#### min details
 
 company name
 comnpany website

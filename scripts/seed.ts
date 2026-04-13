@@ -91,7 +91,7 @@ async function main() {
   `;
   console.log("Created deals table");
 
-  // Create reward table (single row)
+  // Create reward table (single row, legacy)
   await sql`
     CREATE TABLE IF NOT EXISTS reward (
       id INTEGER PRIMARY KEY DEFAULT 1 CHECK (id = 1),
@@ -105,6 +105,21 @@ async function main() {
     ON CONFLICT (id) DO NOTHING
   `;
   console.log("Created reward table");
+
+  // Create rewards table (multi-row)
+  await sql`DROP TABLE IF EXISTS rewards`;
+  await sql`
+    CREATE TABLE IF NOT EXISTS rewards (
+      id SERIAL PRIMARY KEY,
+      category TEXT NOT NULL DEFAULT 'promoter',
+      type TEXT NOT NULL DEFAULT 'sale',
+      description TEXT NOT NULL DEFAULT '',
+      note TEXT NOT NULL DEFAULT '',
+      sort_order INTEGER NOT NULL DEFAULT 0,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    )
+  `;
+  console.log("Created rewards table");
 
   // Seed admin user
   const existing = await sql`SELECT id FROM users WHERE email = 'admin@lawbrokr.ca'`;

@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Bell } from "lucide-react";
+import { Bell, Trash2, Plus, X } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { apiFetch } from "@/lib/api";
 
@@ -22,24 +22,30 @@ interface Referral {
   partner_email: string;
 }
 
-interface Reward {
-  title: string;
+interface RewardItem {
+  id?: number;
+  category: string;
+  type: string;
   description: string;
+  note: string;
+  sort_order: number;
 }
+
+type PlanType = "monthly" | "yearly";
 
 export default function Home() {
   const { user } = useAuth();
   const [referrals, setReferrals] = useState<Referral[]>([]);
-  const [reward, setReward] = useState<Reward>({ title: "", description: "" });
+  const [rewards, setRewards] = useState<RewardItem[]>([]);
 
   const loadData = useCallback(async () => {
-    const [referralsRes, rewardRes] = await Promise.all([
+    const [referralsRes, rewardsRes] = await Promise.all([
       apiFetch("/api/referrals"),
-      apiFetch("/api/reward"),
+      apiFetch("/api/rewards"),
     ]);
     if (!referralsRes.ok) return;
     const newReferrals = (await referralsRes.json()) as Referral[];
-    if (rewardRes.ok) setReward((await rewardRes.json()) as Reward);
+    if (rewardsRes.ok) setRewards((await rewardsRes.json()) as RewardItem[]);
     setReferrals(newReferrals);
   }, []);
 
@@ -71,7 +77,7 @@ export default function Home() {
       </div>
 
       <RewardCard
-        reward={reward}
+        rewards={rewards}
         onUpdated={() => {
           void loadData();
         }}
@@ -268,135 +274,227 @@ function ReviewActions({
 }
 
 function RewardCard({
-  reward,
+  rewards,
   onUpdated,
 }: {
-  reward: Reward;
+  rewards: RewardItem[];
   onUpdated: () => void;
 }) {
-  const [editing, setEditing] = useState(false);
-  const [title, setTitle] = useState(reward.title);
-  const [description, setDescription] = useState(reward.description);
+  const [showModal, setShowModal] = useState(false);
+
+  const isEmpty = rewards.length === 0;
+
+  return (
+    <>
+      <div className="mb-8 rounded-lg border border-gray-200 bg-white p-5">
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-semibold">Rewards</h2>
+          <button
+            type="button"
+            onClick={() => {
+              setShowModal(true);
+            }}
+            className="cursor-pointer text-xs text-purple-500 underline"
+          >
+            {isEmpty ? "Set up" : "Edit"}
+          </button>
+        </div>
+        {isEmpty ? (
+          <p className="mt-2 text-sm text-brand-gray-200">
+            No reward configured yet. Click &quot;Set up&quot; to define what
+            partners earn.
+          </p>
+        ) : (
+          <div className="mt-3 space-y-1">
+            {rewards.map((r) => (
+              <div
+                key={r.id}
+                className="flex items-center gap-2 text-sm text-brand-gray-400"
+              >
+                <Bell className="h-4 w-4 shrink-0 text-brand-gray-300" />
+                <div>
+                  <p>{r.description}</p>
+                  <p className="text-xs text-brand-gray-200">
+                    {r.type === "yearly" ? "Yearly plan" : "Monthly plan"}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {showModal ? (
+        <RewardsSetupModal
+          initialRewards={rewards}
+          onClose={() => {
+            setShowModal(false);
+          }}
+          onSaved={() => {
+            setShowModal(false);
+            onUpdated();
+          }}
+        />
+      ) : null}
+    </>
+  );
+}
+
+function RewardsSetupModal({
+  initialRewards,
+  onClose,
+  onSaved,
+}: {
+  initialRewards: RewardItem[];
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const [items, setItems] = useState<{ description: string; plan: PlanType }[]>(
+    initialRewards.map((r) => ({
+      description: r.description,
+      plan: r.type === "yearly" ? "yearly" : "monthly",
+    })),
+  );
   const [submitting, setSubmitting] = useState(false);
 
-  useEffect(() => {
-    setTitle(reward.title);
-    setDescription(reward.description);
-  }, [reward]);
+  function updateItem(index: number, field: "description" | "plan", value: string) {
+    setItems((prev) =>
+      prev.map((item, i) =>
+        i === index ? { ...item, [field]: value } : item,
+      ),
+    );
+  }
+
+  function addItem() {
+    setItems((prev) => [...prev, { description: "", plan: "monthly" }]);
+  }
+
+  function removeItem(index: number) {
+    setItems((prev) => prev.filter((_, i) => i !== index));
+  }
 
   const handleSave = async () => {
     setSubmitting(true);
     try {
-      await apiFetch("/api/reward", {
+      const rewards: RewardItem[] = items
+        .filter((item) => item.description.trim())
+        .map((item, i) => ({
+          category: "promoter",
+          type: item.plan,
+          description: item.description,
+          note: "",
+          sort_order: i,
+        }));
+      await apiFetch("/api/rewards", {
         method: "PUT",
-        body: JSON.stringify({ title, description }),
+        body: JSON.stringify({ rewards }),
       });
-      setEditing(false);
-      onUpdated();
+      onSaved();
     } finally {
       setSubmitting(false);
     }
   };
 
-  const lines = reward.description.split("\n").filter((l) => l.trim());
-  const isEmpty = !reward.title && !reward.description;
-
-  if (editing) {
-    return (
-      <div className="mb-8 rounded-lg border border-gray-200 bg-white p-5">
-        <h2 className="mb-3 text-sm font-semibold">Rewards</h2>
-        <div className="flex flex-col gap-3">
-          <label className="flex flex-col gap-1 text-sm font-medium">
-            Title
-            <input
-              type="text"
-              value={title}
-              onChange={(e) => {
-                setTitle(e.target.value);
-              }}
-              placeholder="e.g. Partner Rewards"
-              className="rounded border border-brand-gray-100 bg-brand-gray-50 px-3 py-2 text-base outline-none focus:border-purple-400"
-            />
-          </label>
-          <label className="flex flex-col gap-1 text-sm font-medium">
-            Description
-            <textarea
-              value={description}
-              onChange={(e) => {
-                setDescription(e.target.value);
-              }}
-              rows={4}
-              placeholder={"Details"}
-              className="rounded border border-brand-gray-100 bg-brand-gray-50 px-3 py-2 text-base outline-none focus:border-purple-400"
-            />
-          </label>
-          <div className="flex gap-2">
-            <button
-              type="button"
-              disabled={submitting}
-              onClick={() => {
-                void handleSave();
-              }}
-              className="cursor-pointer rounded bg-purple-400 px-4 py-2 text-sm font-medium text-white disabled:opacity-70"
-            >
-              {submitting ? "Saving..." : "Save"}
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setEditing(false);
-                setTitle(reward.title);
-                setDescription(reward.description);
-              }}
-              className="cursor-pointer rounded border border-brand-gray-100 bg-transparent px-4 py-2 text-sm"
-            >
-              Cancel
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="mb-8 rounded-lg border border-gray-200 bg-white p-5">
-      <div className="flex items-center justify-between">
-        <h2 className="text-sm font-semibold">Rewards</h2>
-        <button
-          type="button"
-          onClick={() => {
-            setEditing(true);
-          }}
-          className="cursor-pointer text-xs text-purple-500 underline"
-        >
-          {isEmpty ? "Set up" : "Edit"}
-        </button>
-      </div>
-      {isEmpty ? (
-        <p className="mt-2 text-sm text-brand-gray-200">
-          No reward configured yet. Click &quot;Set up&quot; to define what
-          partners earn.
-        </p>
-      ) : (
-        <div className="mt-3">
-          {reward.title ? (
-            <h3 className="text-base font-bold">{reward.title}</h3>
-          ) : null}
-          {lines.length > 0 ? (
-            <div className="mt-2 space-y-1">
-              {lines.map((line, i) => (
-                <div
-                  key={i}
-                  className="flex items-start gap-2 text-sm text-brand-gray-400"
-                >
-                  <Bell className="mt-0.5 h-4 w-4 shrink-0 text-brand-gray-300" />
-                  {line}
-                </div>
-              ))}
-            </div>
-          ) : null}
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div className="w-full max-w-[500px] rounded-lg bg-white">
+        {/* Header */}
+        <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
+          <h2 className="text-lg font-semibold">Rewards setup</h2>
+          <button
+            type="button"
+            onClick={onClose}
+            className="cursor-pointer text-brand-gray-300 hover:text-brand-gray-600"
+            aria-label="Close"
+          >
+            <X className="h-5 w-5" />
+          </button>
         </div>
-      )}
+
+        <div className="max-h-[70vh] overflow-y-auto px-6 py-5">
+          <p className="mb-4 text-xs text-brand-gray-300">
+            Define what partners earn for each referral.
+          </p>
+
+          <div className="space-y-3">
+            {items.map((item, index) => (
+              <div
+                key={index}
+                className="flex items-start gap-2"
+              >
+                <div className="flex flex-1 flex-col gap-2 sm:flex-row">
+                  <input
+                    type="text"
+                    value={item.description}
+                    onChange={(e) => {
+                      updateItem(index, "description", e.target.value);
+                    }}
+                    placeholder="e.g. 10% commission one-time"
+                    className="flex-1 rounded border border-brand-gray-100 bg-brand-gray-50 px-3 py-2 text-sm outline-none focus:border-purple-400"
+                    autoFocus={index === items.length - 1}
+                  />
+                  <select
+                    value={item.plan}
+                    onChange={(e) => {
+                      updateItem(index, "plan", e.target.value);
+                    }}
+                    aria-label="Plan type"
+                    className="w-full rounded border border-brand-gray-100 bg-brand-gray-50 px-3 py-2 text-sm outline-none focus:border-purple-400 sm:w-[140px]"
+                  >
+                    <option value="monthly">Monthly plan</option>
+                    <option value="yearly">Yearly plan</option>
+                  </select>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    removeItem(index);
+                  }}
+                  className="mt-2 cursor-pointer rounded p-1 text-brand-gray-300 hover:bg-red-50 hover:text-red-500"
+                  aria-label="Remove reward"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </div>
+            ))}
+          </div>
+
+          <button
+            type="button"
+            onClick={addItem}
+            className="mt-4 flex cursor-pointer items-center gap-1.5 rounded-lg border border-dashed border-purple-300 px-3 py-2 text-xs font-medium text-purple-500 hover:bg-purple-50/50"
+          >
+            <Plus className="h-3.5 w-3.5" />
+            Add Reward
+          </button>
+        </div>
+
+        {/* Footer */}
+        <div className="flex items-center justify-between border-t border-gray-200 px-6 py-4">
+          <button
+            type="button"
+            onClick={onClose}
+            className="cursor-pointer text-sm text-brand-gray-300 hover:text-brand-gray-500"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            disabled={submitting}
+            onClick={() => {
+              void handleSave();
+            }}
+            className="cursor-pointer rounded bg-purple-400 px-6 py-2 text-sm font-medium text-white disabled:opacity-70"
+          >
+            {submitting ? "Saving..." : "Save"}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
