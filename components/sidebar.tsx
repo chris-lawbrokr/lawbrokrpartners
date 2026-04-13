@@ -40,6 +40,17 @@ export function Sidebar({ variant }: { variant: "admin" | "partner" }) {
         <img src="/Logo.svg" alt="LawBrokr" className="h-6" />
       </div>
 
+      {/* User */}
+      {user ? (
+        <div className="px-5 pb-3">
+          <p className="truncate text-sm font-medium text-brand-gray-600">
+            {user.firstName} {user.lastName}
+          </p>
+        </div>
+      ) : null}
+
+      <div className="mx-3 border-t border-gray-200" />
+
       {/* Nav */}
       <nav className="flex-1 space-y-1 px-3 py-2">
         {items.map((item) => {
@@ -61,13 +72,8 @@ export function Sidebar({ variant }: { variant: "admin" | "partner" }) {
         })}
       </nav>
 
-      {/* User + Logout */}
+      {/* Logout */}
       <div className="border-t border-gray-200 px-4 py-4">
-        {user ? (
-          <p className="mb-2 truncate text-xs text-brand-gray-300">
-            {user.firstName} {user.lastName}
-          </p>
-        ) : null}
         <button
           type="button"
           onClick={() => { void logout(); }}
