@@ -317,6 +317,9 @@ export default function PartnerDashboard() {
           </button>
         </div>
       ) : null}
+
+      {/* Payout Method */}
+      <PayoutMethodCard />
     </main>
   );
 }
@@ -328,7 +331,8 @@ function AddLeadModal({
   onClose: () => void;
   onCreated: () => void;
 }) {
-  const [leadName, setLeadName] = useState("");
+  const [leadFirstName, setLeadFirstName] = useState("");
+  const [leadLastName, setLeadLastName] = useState("");
   const [leadEmail, setLeadEmail] = useState("");
   const [leadPhone, setLeadPhone] = useState("");
   const [notes, setNotes] = useState("");
@@ -343,7 +347,7 @@ function AddLeadModal({
     try {
       const res = await apiFetch("/api/partner/referrals", {
         method: "POST",
-        body: JSON.stringify({ leadName, leadEmail, leadPhone, notes }),
+        body: JSON.stringify({ leadName: `${leadFirstName} ${leadLastName}`.trim(), leadEmail, leadPhone, notes }),
       });
 
       if (!res.ok) {
@@ -387,18 +391,32 @@ function AddLeadModal({
           }}
           className="flex flex-col gap-3"
         >
-          <label className="flex flex-col gap-1 text-sm font-medium">
-            Lead Name *
-            <input
-              type="text"
-              value={leadName}
-              onChange={(e) => {
-                setLeadName(e.target.value);
-              }}
-              required
-              className="w-full rounded border border-brand-gray-100 bg-brand-gray-50 px-3 py-2 text-base outline-none focus:border-purple-400"
-            />
-          </label>
+          <div className="flex gap-3">
+            <label className="flex flex-1 flex-col gap-1 text-sm font-medium">
+              Lead First Name *
+              <input
+                type="text"
+                value={leadFirstName}
+                onChange={(e) => {
+                  setLeadFirstName(e.target.value);
+                }}
+                required
+                className="w-full rounded border border-brand-gray-100 bg-brand-gray-50 px-3 py-2 text-base outline-none focus:border-purple-400"
+              />
+            </label>
+            <label className="flex flex-1 flex-col gap-1 text-sm font-medium">
+              Lead Last Name *
+              <input
+                type="text"
+                value={leadLastName}
+                onChange={(e) => {
+                  setLeadLastName(e.target.value);
+                }}
+                required
+                className="w-full rounded border border-brand-gray-100 bg-brand-gray-50 px-3 py-2 text-base outline-none focus:border-purple-400"
+              />
+            </label>
+          </div>
           <label className="flex flex-col gap-1 text-sm font-medium">
             Lead Email
             <input
@@ -642,6 +660,345 @@ function DetailRow({ label, value }: { label: string; value: string }) {
       <span className="max-w-[60%] text-right text-sm text-brand-gray-600">
         {value || <span className="text-brand-gray-200">-</span>}
       </span>
+    </div>
+  );
+}
+
+interface PayoutMethod {
+  bankCountry: string;
+  accountHolderName: string;
+  accountNumber: string;
+  routingNumber: string;
+  recipientCountry: string;
+  recipientCity: string;
+  recipientAddress: string;
+  recipientState: string;
+  recipientPostalCode: string;
+  status: string;
+}
+
+function PayoutMethodCard() {
+  const [payout, setPayout] = useState<PayoutMethod | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [editing, setEditing] = useState(false);
+
+  useEffect(() => {
+    async function load() {
+      const res = await apiFetch("/api/partner/payout");
+      if (res.ok) {
+        setPayout((await res.json()) as PayoutMethod | null);
+      }
+      setLoading(false);
+    }
+    void load();
+  }, []);
+
+  const handleSaved = async () => {
+    setEditing(false);
+    const res = await apiFetch("/api/partner/payout");
+    if (res.ok) {
+      setPayout((await res.json()) as PayoutMethod | null);
+    }
+  };
+
+  return (
+    <div className="mt-8 rounded-lg border border-gray-200 bg-white p-6">
+      <div className="flex items-center justify-between">
+        <h2 className="text-lg font-semibold">Payout Method</h2>
+        {!loading ? (
+          <button
+            type="button"
+            onClick={() => {
+              setEditing(true);
+            }}
+            className="cursor-pointer text-xs text-purple-500 underline"
+          >
+            {payout ? "Edit" : "Set up"}
+          </button>
+        ) : null}
+      </div>
+
+      {loading ? (
+        <div className="mt-4 flex justify-center">
+          <div className="h-5 w-5 animate-spin rounded-full border-2 border-purple-200 border-t-purple-500" />
+        </div>
+      ) : !payout ? (
+        <p className="mt-2 text-sm text-brand-gray-200">
+          No payout method configured. Click &quot;Set up&quot; to add your bank
+          details.
+        </p>
+      ) : (
+        <div className="mt-4 space-y-2">
+          <div className="flex items-center gap-2">
+            <span
+              className={`inline-block h-2 w-2 rounded-full ${payout.status === "active" ? "bg-purple-400" : "bg-brand-gray-200"}`}
+            />
+            <span className="text-xs font-medium text-brand-gray-400">
+              {payout.status === "active" ? "Active" : payout.status}
+            </span>
+          </div>
+          <DetailRow label="Bank Country" value={payout.bankCountry} />
+          <DetailRow label="Account Holder" value={payout.accountHolderName} />
+          <DetailRow label="Account Number" value={payout.accountNumber} />
+          <DetailRow label="Routing Number" value={payout.routingNumber} />
+          <DetailRow label="Country" value={payout.recipientCountry} />
+          <DetailRow label="State" value={payout.recipientState} />
+          <DetailRow label="City" value={payout.recipientCity} />
+          <DetailRow label="Address" value={payout.recipientAddress} />
+          <DetailRow label="Postal Code" value={payout.recipientPostalCode} />
+        </div>
+      )}
+
+      {editing ? (
+        <PayoutEditModal
+          existing={payout}
+          onClose={() => {
+            setEditing(false);
+          }}
+          onSaved={() => {
+            void handleSaved();
+          }}
+        />
+      ) : null}
+    </div>
+  );
+}
+
+function PayoutEditModal({
+  existing,
+  onClose,
+  onSaved,
+}: {
+  existing: PayoutMethod | null;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const [bankCountry, setBankCountry] = useState(
+    existing?.bankCountry ?? "United States",
+  );
+  const [accountHolderName, setAccountHolderName] = useState(
+    existing?.accountHolderName ?? "",
+  );
+  const [accountNumber, setAccountNumber] = useState("");
+  const [routingNumber, setRoutingNumber] = useState("");
+  const [recipientCountry, setRecipientCountry] = useState(
+    existing?.recipientCountry ?? "United States",
+  );
+  const [recipientCity, setRecipientCity] = useState(
+    existing?.recipientCity ?? "",
+  );
+  const [recipientAddress, setRecipientAddress] = useState(
+    existing?.recipientAddress ?? "",
+  );
+  const [recipientState, setRecipientState] = useState(
+    existing?.recipientState ?? "",
+  );
+  const [recipientPostalCode, setRecipientPostalCode] = useState(
+    existing?.recipientPostalCode ?? "",
+  );
+  const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleSubmit = async (e: React.SyntheticEvent) => {
+    e.preventDefault();
+    setError(null);
+
+    if (!accountHolderName || !accountNumber || !routingNumber) {
+      setError("Account holder name, account number, and routing number are required.");
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const res = await apiFetch("/api/partner/payout", {
+        method: "PUT",
+        body: JSON.stringify({
+          bankCountry,
+          accountHolderName,
+          accountNumber,
+          routingNumber,
+          recipientCountry,
+          recipientCity,
+          recipientAddress,
+          recipientState,
+          recipientPostalCode,
+        }),
+      });
+      if (!res.ok) {
+        const data = (await res.json().catch(() => null)) as {
+          message?: string;
+        } | null;
+        throw new Error(data?.message ?? "Failed to save");
+      }
+      onSaved();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div className="w-full max-w-[500px] rounded-lg bg-white">
+        <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
+          <h2 className="text-lg font-semibold">Edit Payout Method</h2>
+          <button
+            type="button"
+            onClick={onClose}
+            className="cursor-pointer text-brand-gray-300 hover:text-brand-gray-600"
+            aria-label="Close"
+          >
+            &times;
+          </button>
+        </div>
+
+        <form
+          onSubmit={(e) => {
+            void handleSubmit(e);
+          }}
+          className="max-h-[70vh] overflow-y-auto px-6 py-5"
+        >
+          {error ? (
+            <div className="mb-4 rounded bg-purple-50 p-3 text-sm text-purple-600">
+              {error}
+            </div>
+          ) : null}
+
+          <h3 className="mb-3 text-sm font-semibold">Bank Details</h3>
+          <div className="flex flex-col gap-3">
+            <label className="flex flex-col gap-1 text-sm font-medium">
+              Bank Country *
+              <select
+                value={bankCountry}
+                onChange={(e) => {
+                  setBankCountry(e.target.value);
+                }}
+                className="w-full rounded border border-brand-gray-100 bg-brand-gray-50 px-3 py-2 text-sm outline-none focus:border-purple-400"
+              >
+                <option value="United States">United States</option>
+                <option value="Canada">Canada</option>
+              </select>
+            </label>
+            <label className="flex flex-col gap-1 text-sm font-medium">
+              Account Holder Name *
+              <input
+                type="text"
+                value={accountHolderName}
+                onChange={(e) => {
+                  setAccountHolderName(e.target.value);
+                }}
+                required
+                className="w-full rounded border border-brand-gray-100 bg-brand-gray-50 px-3 py-2 text-sm outline-none focus:border-purple-400"
+              />
+            </label>
+            <label className="flex flex-col gap-1 text-sm font-medium">
+              Account Number *
+              <input
+                type="password"
+                value={accountNumber}
+                onChange={(e) => {
+                  setAccountNumber(e.target.value.replace(/\D/g, ""));
+                }}
+                required
+                autoComplete="off"
+                placeholder={existing ? "Enter new account number" : ""}
+                className="w-full rounded border border-brand-gray-100 bg-brand-gray-50 px-3 py-2 text-sm outline-none focus:border-purple-400"
+              />
+            </label>
+            <label className="flex flex-col gap-1 text-sm font-medium">
+              Routing / ABA Number *
+              <input
+                type="password"
+                value={routingNumber}
+                onChange={(e) => {
+                  setRoutingNumber(e.target.value.replace(/\D/g, ""));
+                }}
+                required
+                autoComplete="off"
+                placeholder={existing ? "Enter new routing number" : ""}
+                className="w-full rounded border border-brand-gray-100 bg-brand-gray-50 px-3 py-2 text-sm outline-none focus:border-purple-400"
+              />
+            </label>
+          </div>
+
+          <h3 className="mb-3 mt-5 text-sm font-semibold">Recipient Address</h3>
+          <div className="flex flex-col gap-3">
+            <label className="flex flex-col gap-1 text-sm font-medium">
+              Country
+              <select
+                value={recipientCountry}
+                onChange={(e) => {
+                  setRecipientCountry(e.target.value);
+                }}
+                className="w-full rounded border border-brand-gray-100 bg-brand-gray-50 px-3 py-2 text-sm outline-none focus:border-purple-400"
+              >
+                <option value="United States">United States</option>
+                <option value="Canada">Canada</option>
+              </select>
+            </label>
+            <div className="flex gap-3">
+              <label className="flex flex-1 flex-col gap-1 text-sm font-medium">
+                State / Province
+                <input
+                  type="text"
+                  value={recipientState}
+                  onChange={(e) => {
+                    setRecipientState(e.target.value);
+                  }}
+                  className="w-full rounded border border-brand-gray-100 bg-brand-gray-50 px-3 py-2 text-sm outline-none focus:border-purple-400"
+                />
+              </label>
+              <label className="flex flex-1 flex-col gap-1 text-sm font-medium">
+                City
+                <input
+                  type="text"
+                  value={recipientCity}
+                  onChange={(e) => {
+                    setRecipientCity(e.target.value);
+                  }}
+                  className="w-full rounded border border-brand-gray-100 bg-brand-gray-50 px-3 py-2 text-sm outline-none focus:border-purple-400"
+                />
+              </label>
+            </div>
+            <label className="flex flex-col gap-1 text-sm font-medium">
+              Address
+              <input
+                type="text"
+                value={recipientAddress}
+                onChange={(e) => {
+                  setRecipientAddress(e.target.value);
+                }}
+                className="w-full rounded border border-brand-gray-100 bg-brand-gray-50 px-3 py-2 text-sm outline-none focus:border-purple-400"
+              />
+            </label>
+            <label className="flex flex-col gap-1 text-sm font-medium">
+              Postal Code
+              <input
+                type="text"
+                value={recipientPostalCode}
+                onChange={(e) => {
+                  setRecipientPostalCode(e.target.value);
+                }}
+                className="w-full rounded border border-brand-gray-100 bg-brand-gray-50 px-3 py-2 text-sm outline-none focus:border-purple-400"
+              />
+            </label>
+          </div>
+
+          <button
+            type="submit"
+            disabled={submitting}
+            className="mt-5 w-full cursor-pointer rounded bg-purple-400 py-2.5 text-sm font-medium text-white disabled:opacity-70"
+          >
+            {submitting ? "Saving..." : "Save Payout Method"}
+          </button>
+        </form>
+      </div>
     </div>
   );
 }

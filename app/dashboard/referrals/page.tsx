@@ -20,10 +20,10 @@ interface MyReferral {
 }
 
 const columns = [
-  { key: "submitted", label: "Under Review", color: "border-purple-400" },
-  { key: "unpaid", label: "Unpaid", color: "border-purple-500" },
-  { key: "paid", label: "Paid", color: "border-purple-600" },
-  { key: "rejected", label: "Rejected", color: "border-purple-200" },
+  { key: "submitted", label: "Under Review", color: "border-purple-50" },
+  { key: "unpaid", label: "Unpaid", color: "border-purple-100" },
+  { key: "paid", label: "Paid", color: "border-purple-200" },
+  { key: "rejected", label: "Rejected", color: "border-purple-300" },
 ] as const;
 
 export default function PartnerReferralsPage() {
@@ -81,7 +81,7 @@ export default function PartnerReferralsPage() {
                 </div>
                 <div className="flex flex-1 flex-col gap-2">
                   {items.length === 0 ? (
-                    <div className="rounded-lg border border-dashed border-gray-200 py-8 text-center text-xs text-brand-gray-200">
+                    <div className="flex min-h-[88px] items-center justify-center rounded-lg border border-dashed border-gray-200 p-3 text-xs text-brand-gray-200">
                       No referrals
                     </div>
                   ) : (

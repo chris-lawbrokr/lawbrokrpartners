@@ -19,7 +19,9 @@ async function main() {
 
   const sql = neon(databaseUrl);
 
-  // Drop old tables
+  // Drop old tables (order matters — drop dependents first)
+  await sql`DROP TABLE IF EXISTS payout_methods`;
+  await sql`DROP TABLE IF EXISTS rewards`;
   await sql`DROP TABLE IF EXISTS reward`;
   await sql`DROP TABLE IF EXISTS deals`;
   await sql`DROP TABLE IF EXISTS referrals`;
@@ -120,6 +122,28 @@ async function main() {
     )
   `;
   console.log("Created rewards table");
+
+  // Create payout_methods table
+  await sql`DROP TABLE IF EXISTS payout_methods`;
+  await sql`
+    CREATE TABLE IF NOT EXISTS payout_methods (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
+      bank_country TEXT NOT NULL DEFAULT '',
+      account_holder_name TEXT NOT NULL DEFAULT '',
+      account_number TEXT NOT NULL DEFAULT '',
+      routing_number TEXT NOT NULL DEFAULT '',
+      recipient_country TEXT NOT NULL DEFAULT '',
+      recipient_city TEXT NOT NULL DEFAULT '',
+      recipient_address TEXT NOT NULL DEFAULT '',
+      recipient_state TEXT NOT NULL DEFAULT '',
+      recipient_postal_code TEXT NOT NULL DEFAULT '',
+      status TEXT NOT NULL DEFAULT 'active',
+      created_at TIMESTAMPTZ DEFAULT NOW(),
+      updated_at TIMESTAMPTZ DEFAULT NOW()
+    )
+  `;
+  console.log("Created payout_methods table");
 
   // Seed admin user
   const existing = await sql`SELECT id FROM users WHERE email = 'admin@lawbrokr.ca'`;

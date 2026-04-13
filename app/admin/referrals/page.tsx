@@ -43,10 +43,10 @@ interface Referral {
 }
 
 const columns = [
-  { key: "submitted", label: "Under Review", color: "border-purple-400" },
-  { key: "unpaid", label: "Unpaid", color: "border-purple-500" },
-  { key: "paid", label: "Paid", color: "border-purple-600" },
-  { key: "rejected", label: "Rejected", color: "border-purple-200" },
+  { key: "submitted", label: "Under Review", color: "border-purple-50" },
+  { key: "unpaid", label: "Unpaid", color: "border-purple-100" },
+  { key: "paid", label: "Paid", color: "border-purple-200" },
+  { key: "rejected", label: "Rejected", color: "border-purple-300" },
 ] as const;
 
 export default function AdminReferralsPage() {
@@ -113,7 +113,7 @@ export default function AdminReferralsPage() {
                 </div>
                 <div className="flex flex-1 flex-col gap-2">
                   {items.length === 0 ? (
-                    <div className="rounded-lg border border-dashed border-gray-200 py-8 text-center text-xs text-brand-gray-200">
+                    <div className="flex min-h-[88px] items-center justify-center rounded-lg border border-dashed border-gray-200 p-3 text-xs text-brand-gray-200">
                       No referrals
                     </div>
                   ) : (
@@ -547,43 +547,46 @@ function AddReferralModal({
 
               <div className="flex gap-3">
                 <label className="flex flex-1 flex-col gap-1 text-sm font-medium">
-                  Lead First Name
+                  Lead First Name *
                   <input
                     type="text"
                     value={leadName}
                     onChange={(e) => {
                       setLeadName(e.target.value);
                     }}
+                    required
                     className="w-full rounded border border-brand-gray-100 bg-brand-gray-50 px-3 py-2 text-sm outline-none focus:border-purple-400"
                   />
                 </label>
                 <label className="flex flex-1 flex-col gap-1 text-sm font-medium">
-                  Lead Last Name
+                  Lead Last Name *
                   <input
                     type="text"
                     value={leadLastName}
                     onChange={(e) => {
                       setLeadLastName(e.target.value);
                     }}
+                    required
                     className="w-full rounded border border-brand-gray-100 bg-brand-gray-50 px-3 py-2 text-sm outline-none focus:border-purple-400"
                   />
                 </label>
               </div>
 
               <label className="flex flex-col gap-1 text-sm font-medium">
-                Lead Email
+                Lead Email *
                 <input
                   type="email"
                   value={leadEmail}
                   onChange={(e) => {
                     setLeadEmail(e.target.value);
                   }}
+                  required
                   className="w-full rounded border border-brand-gray-100 bg-brand-gray-50 px-3 py-2 text-sm outline-none focus:border-purple-400"
                 />
               </label>
 
               <label className="flex flex-col gap-1 text-sm font-medium">
-                Lead Phone
+                Lead Phone *
                 <input
                   type="tel"
                   value={leadPhone}
@@ -591,6 +594,7 @@ function AddReferralModal({
                     setLeadPhone(formatPhone(e.target.value));
                   }}
                   placeholder="(555) 123-4567"
+                  required
                   className="w-full rounded border border-brand-gray-100 bg-brand-gray-50 px-3 py-2 text-sm outline-none focus:border-purple-400"
                 />
               </label>
@@ -603,7 +607,6 @@ function AddReferralModal({
                     setNotes(e.target.value);
                   }}
                   rows={2}
-                  placeholder="Optional notes"
                   className="w-full rounded border border-brand-gray-100 bg-brand-gray-50 px-3 py-2 text-sm outline-none focus:border-purple-400"
                 />
               </label>
