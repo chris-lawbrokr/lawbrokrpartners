@@ -12,6 +12,13 @@ import {
 import { useAuth } from "@/lib/auth";
 import { apiFetch } from "@/lib/api";
 
+function formatPhone(value: string): string {
+  const digits = value.replace(/\D/g, "").slice(0, 10);
+  if (digits.length <= 3) return digits;
+  if (digits.length <= 6) return `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
+  return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+}
+
 interface MyReferral {
   id: number;
   referral_code: string;
@@ -409,8 +416,9 @@ function AddLeadModal({
               type="tel"
               value={leadPhone}
               onChange={(e) => {
-                setLeadPhone(e.target.value);
+                setLeadPhone(formatPhone(e.target.value));
               }}
+              placeholder="(555) 123-4567"
               className="w-full rounded border border-brand-gray-100 bg-brand-gray-50 px-3 py-2 text-base outline-none focus:border-purple-400"
             />
           </label>
@@ -552,8 +560,9 @@ function ReferralDetailModal({
                 type="tel"
                 value={leadPhone}
                 onChange={(e) => {
-                  setLeadPhone(e.target.value);
+                  setLeadPhone(formatPhone(e.target.value));
                 }}
+                placeholder="(555) 123-4567"
                 className="w-full rounded border border-brand-gray-100 bg-brand-gray-50 px-3 py-2 text-base outline-none focus:border-purple-400"
               />
             </label>

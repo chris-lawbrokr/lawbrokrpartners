@@ -17,9 +17,9 @@ export async function PATCH(
     adminNote?: string;
   };
 
-  if (body.status !== "approved" && body.status !== "rejected") {
+  if (body.status !== "approved" && body.status !== "rejected" && body.status !== "paid") {
     return NextResponse.json(
-      { message: "Status must be 'approved' or 'rejected'" },
+      { message: "Status must be 'approved', 'rejected', or 'paid'" },
       { status: 400 },
     );
   }
@@ -39,5 +39,25 @@ export async function PATCH(
     WHERE id = ${id}
   `;
 
+  return NextResponse.json({ ok: true });
+}
+
+// DELETE: Admin deletes a referral
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  const auth = await requireAdmin(request);
+  if (auth instanceof NextResponse) return auth;
+
+  const { id } = await params;
+  const sql = getDb();
+
+  const rows = await sql`SELECT id FROM referrals WHERE id = ${id}`;
+  if (rows.length === 0) {
+    return NextResponse.json({ message: "Referral not found" }, { status: 404 });
+  }
+
+  await sql`DELETE FROM referrals WHERE id = ${id}`;
   return NextResponse.json({ ok: true });
 }

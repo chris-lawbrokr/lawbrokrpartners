@@ -21,7 +21,8 @@ interface MyReferral {
 
 const columns = [
   { key: "submitted", label: "Under Review", color: "border-purple-400" },
-  { key: "approved", label: "Confirmed", color: "border-purple-600" },
+  { key: "unpaid", label: "Unpaid", color: "border-purple-500" },
+  { key: "paid", label: "Paid", color: "border-purple-600" },
   { key: "rejected", label: "Rejected", color: "border-purple-200" },
 ] as const;
 
@@ -51,7 +52,8 @@ export default function PartnerReferralsPage() {
 
   const grouped = {
     submitted: referrals.filter((r) => r.status === "submitted"),
-    approved: referrals.filter((r) => r.status === "approved"),
+    unpaid: referrals.filter((r) => r.status === "approved"),
+    paid: referrals.filter((r) => r.status === "paid"),
     rejected: referrals.filter((r) => r.status === "rejected"),
   };
 
