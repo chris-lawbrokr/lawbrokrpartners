@@ -612,4 +612,3 @@ function CreatePartnerModal({
     </div>
   );
 }
-``;
