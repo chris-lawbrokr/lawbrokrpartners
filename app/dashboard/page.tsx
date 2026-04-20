@@ -348,7 +348,11 @@ export default function PartnerDashboard() {
       ) : null}
 
       {/* Payout Method */}
-      <PayoutMethodCard onChange={refreshPayoutStatus} />
+      <PayoutMethodCard
+        onChange={() => {
+          void refreshPayoutStatus();
+        }}
+      />
     </main>
   );
 }
