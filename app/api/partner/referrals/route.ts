@@ -75,8 +75,8 @@ export async function POST(request: NextRequest) {
   const referralCode = String(userRows[0]?.referral_code ?? "");
 
   await sql`
-    INSERT INTO referrals (partner_id, referral_code, source, lead_name, lead_email, lead_phone, notes, status)
-    VALUES (${auth.userId}, ${referralCode}, 'manual', ${body.leadName ?? ""}, ${body.leadEmail ?? ""}, ${body.leadPhone ?? ""}, ${body.notes ?? ""}, 'submitted')
+    INSERT INTO referrals (partner_id, reward_id, referral_code, source, lead_name, lead_email, lead_phone, notes, status)
+    VALUES (${auth.userId}, ${body.rewardId}, ${referralCode}, 'manual', ${body.leadName ?? ""}, ${body.leadEmail ?? ""}, ${body.leadPhone ?? ""}, ${body.notes ?? ""}, 'submitted')
   `;
 
   return NextResponse.json({ ok: true }, { status: 201 });

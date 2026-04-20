@@ -40,6 +40,9 @@ interface Referral {
   first_name: string;
   last_name: string;
   partner_email: string;
+  reward_id: number | null;
+  reward_description: string | null;
+  reward_type: string | null;
 }
 
 const columns = [
@@ -253,6 +256,14 @@ function ReferralModal({
 
         <div className="space-y-3 px-6 py-5">
           <DetailRow label="Partner" value={partnerName} />
+          <DetailRow
+            label="Offer"
+            value={
+              referral.reward_description
+                ? `${referral.reward_description} (${referral.reward_type === "yearly" ? "Yearly" : "Monthly"})`
+                : ""
+            }
+          />
           <DetailRow
             label="Source"
             value={referral.source === "manual" ? "Manual" : "Link Click"}

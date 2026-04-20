@@ -58,6 +58,21 @@ async function main() {
   `;
   console.log("Created invites table");
 
+  // Create rewards table (multi-row) — referrals references it, so create first
+  await sql`DROP TABLE IF EXISTS rewards`;
+  await sql`
+    CREATE TABLE IF NOT EXISTS rewards (
+      id SERIAL PRIMARY KEY,
+      category TEXT NOT NULL DEFAULT 'promoter',
+      type TEXT NOT NULL DEFAULT 'sale',
+      description TEXT NOT NULL DEFAULT '',
+      note TEXT NOT NULL DEFAULT '',
+      sort_order INTEGER NOT NULL DEFAULT 0,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    )
+  `;
+  console.log("Created rewards table");
+
   // Create referrals table
   // source: 'link' (from referral link) or 'manual' (partner submitted)
   // status: 'pending' -> 'submitted' -> 'approved' or 'rejected'
@@ -65,6 +80,7 @@ async function main() {
     CREATE TABLE IF NOT EXISTS referrals (
       id SERIAL PRIMARY KEY,
       partner_id INTEGER NOT NULL REFERENCES users(id),
+      reward_id INTEGER REFERENCES rewards(id),
       referral_code TEXT NOT NULL,
       source TEXT NOT NULL DEFAULT 'link',
       lead_name TEXT NOT NULL DEFAULT '',
@@ -107,21 +123,6 @@ async function main() {
     ON CONFLICT (id) DO NOTHING
   `;
   console.log("Created reward table");
-
-  // Create rewards table (multi-row)
-  await sql`DROP TABLE IF EXISTS rewards`;
-  await sql`
-    CREATE TABLE IF NOT EXISTS rewards (
-      id SERIAL PRIMARY KEY,
-      category TEXT NOT NULL DEFAULT 'promoter',
-      type TEXT NOT NULL DEFAULT 'sale',
-      description TEXT NOT NULL DEFAULT '',
-      note TEXT NOT NULL DEFAULT '',
-      sort_order INTEGER NOT NULL DEFAULT 0,
-      created_at TIMESTAMPTZ DEFAULT NOW()
-    )
-  `;
-  console.log("Created rewards table");
 
   // Create payout_methods table
   await sql`DROP TABLE IF EXISTS payout_methods`;
