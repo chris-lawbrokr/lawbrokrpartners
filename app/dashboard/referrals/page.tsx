@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { X } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { X, Search, SlidersHorizontal } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { apiFetch } from "@/lib/api";
 
@@ -41,6 +41,34 @@ export default function PartnerReferralsPage() {
   const [selectedReferral, setSelectedReferral] = useState<MyReferral | null>(
     null,
   );
+  const [search, setSearch] = useState("");
+  const [dateFilter, setDateFilter] = useState<
+    "all" | "today" | "7d" | "30d"
+  >("all");
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const filtersRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!filtersOpen) return;
+    function handleClick(e: MouseEvent) {
+      if (
+        filtersRef.current &&
+        !filtersRef.current.contains(e.target as Node)
+      ) {
+        setFiltersOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => {
+      document.removeEventListener("mousedown", handleClick);
+    };
+  }, [filtersOpen]);
+
+  const activeFilterCount = dateFilter !== "all" ? 1 : 0;
+
+  const resetFilters = () => {
+    setDateFilter("all");
+  };
 
   const loadData = useCallback(async () => {
     const res = await apiFetch("/api/partner/referrals");
@@ -58,16 +86,118 @@ export default function PartnerReferralsPage() {
     if (user) void loadData();
   }, [user, loadData]);
 
+  const q = search.trim().toLowerCase();
+  const dateCutoff = (() => {
+    if (dateFilter === "all") return null;
+    const d = new Date();
+    if (dateFilter === "today") {
+      d.setHours(0, 0, 0, 0);
+    } else if (dateFilter === "7d") {
+      d.setDate(d.getDate() - 7);
+    } else {
+      d.setDate(d.getDate() - 30);
+    }
+    return d.getTime();
+  })();
+
+  const filtered = referrals.filter((r) => {
+    if (q) {
+      const matches =
+        r.lead_name.toLowerCase().includes(q) ||
+        r.lead_email.toLowerCase().includes(q) ||
+        r.lead_phone.toLowerCase().includes(q);
+      if (!matches) return false;
+    }
+    if (dateCutoff !== null && new Date(r.created_at).getTime() < dateCutoff) {
+      return false;
+    }
+    return true;
+  });
+
   const grouped = {
-    submitted: referrals.filter((r) => r.status === "submitted"),
-    demo_booked: referrals.filter((r) => r.status === "demo_booked"),
-    closed_won: referrals.filter((r) => r.status === "closed_won"),
-    closed_lost: referrals.filter((r) => r.status === "closed_lost"),
+    submitted: filtered.filter((r) => r.status === "submitted"),
+    demo_booked: filtered.filter((r) => r.status === "demo_booked"),
+    closed_won: filtered.filter((r) => r.status === "closed_won"),
+    closed_lost: filtered.filter((r) => r.status === "closed_lost"),
   };
 
   return (
     <main className="p-8">
       <h1 className="mb-6 text-2xl font-bold">Referrals</h1>
+
+      <div className="mb-6 flex flex-col gap-2 sm:flex-row">
+        <div className="relative flex-1">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-brand-gray-300" />
+          <input
+            type="search"
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+            }}
+            placeholder="Search by lead name, email, or phone"
+            className="w-full rounded border border-brand-gray-100 bg-brand-gray-50 py-2 pl-9 pr-3 text-sm outline-none focus:border-purple-400"
+          />
+        </div>
+        <div className="relative" ref={filtersRef}>
+          <button
+            type="button"
+            onClick={() => {
+              setFiltersOpen((v) => !v);
+            }}
+            className="flex cursor-pointer items-center gap-1.5 rounded border border-brand-gray-100 bg-brand-gray-50 px-3 py-2 text-sm hover:border-purple-400"
+          >
+            <SlidersHorizontal className="h-4 w-4" />
+            Filters
+            {activeFilterCount > 0 ? (
+              <span className="ml-1 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-purple-400 px-1.5 text-xs font-medium text-white">
+                {activeFilterCount}
+              </span>
+            ) : null}
+          </button>
+          {filtersOpen ? (
+            <div className="absolute right-0 top-full z-10 mt-1 w-72 rounded-lg border border-gray-200 bg-white p-4 shadow-lg">
+              <div className="space-y-4">
+                <label className="flex flex-col gap-1 text-sm">
+                  <span className="text-xs font-medium text-brand-gray-400">
+                    Date
+                  </span>
+                  <select
+                    value={dateFilter}
+                    onChange={(e) => {
+                      setDateFilter(e.target.value as typeof dateFilter);
+                    }}
+                    className="w-full cursor-pointer rounded border border-brand-gray-100 bg-brand-gray-50 px-3 py-2 outline-none focus:border-purple-400"
+                  >
+                    <option value="all">All time</option>
+                    <option value="today">Today</option>
+                    <option value="7d">Last 7 days</option>
+                    <option value="30d">Last 30 days</option>
+                  </select>
+                </label>
+                <div className="flex items-center justify-between border-t border-gray-100 pt-3">
+                  <button
+                    type="button"
+                    onClick={resetFilters}
+                    disabled={activeFilterCount === 0}
+                    className="cursor-pointer text-xs text-purple-500 underline disabled:cursor-not-allowed disabled:text-brand-gray-200 disabled:no-underline"
+                  >
+                    Reset
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setFiltersOpen(false);
+                    }}
+                    className="cursor-pointer rounded bg-purple-400 px-3 py-1.5 text-xs font-medium text-white"
+                  >
+                    Done
+                  </button>
+                </div>
+              </div>
+            </div>
+          ) : null}
+        </div>
+      </div>
 
       {loading ? (
         <div className="flex justify-center py-16">

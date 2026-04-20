@@ -96,7 +96,8 @@ export async function POST(
   const passwordHash = await bcrypt.hash(password, 12);
   const referralCode = crypto.randomBytes(6).toString("hex");
 
-  // Update user with partner's info, activate, and assign referral code
+  // Update user with partner's info and assign referral code.
+  // Status goes to pending_approval — admin must accept before they can log in.
   await sql`
     UPDATE users
     SET first_name = ${firstName},
@@ -105,15 +106,18 @@ export async function POST(
         website = ${website ?? ""},
         password_hash = ${passwordHash},
         referral_code = ${referralCode},
-        status = 'active'
+        status = 'pending_approval'
     WHERE id = ${invite?.user_id as number}
   `;
 
   // Mark invite as used
   await sql`UPDATE invites SET used = true, used_at = NOW() WHERE id = ${invite?.invite_id as number}`;
 
-  return NextResponse.json({
-    ok: true,
-    referralLink: `https://www.lawbrokr.com/referral?ref=${referralCode}`,
-  }, { status: 201 });
+  return NextResponse.json(
+    {
+      ok: true,
+      pendingApproval: true,
+    },
+    { status: 201 },
+  );
 }

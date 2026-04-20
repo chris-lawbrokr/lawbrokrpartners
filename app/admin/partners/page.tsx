@@ -49,6 +49,36 @@ export default function PartnersPage() {
     }, 2000);
   }
 
+  async function approvePartner(id: number) {
+    const res = await apiFetch(`/api/users/${String(id)}`, {
+      method: "PATCH",
+      body: JSON.stringify({ status: "active" }),
+    });
+    if (res.ok) void loadData();
+  }
+
+  function statusBadge(status: string) {
+    if (status === "active") {
+      return (
+        <span className="inline-block rounded-full bg-green-100 px-2 py-0.5 text-xs font-semibold text-green-800">
+          Active
+        </span>
+      );
+    }
+    if (status === "pending_approval") {
+      return (
+        <span className="inline-block rounded-full bg-orange-100 px-2 py-0.5 text-xs font-semibold text-orange-800">
+          Pending Approval
+        </span>
+      );
+    }
+    return (
+      <span className="inline-block rounded-full bg-yellow-100 px-2 py-0.5 text-xs font-semibold text-yellow-800">
+        Pending
+      </span>
+    );
+  }
+
   return (
     <main className="mx-auto max-w-[1100px] p-8">
       <div className="mb-4 flex items-center justify-between">
@@ -127,17 +157,7 @@ export default function PartnersPage() {
                       <span className="text-brand-gray-200">-</span>
                     )}
                   </td>
-                  <td className="px-2 py-3">
-                    <span
-                      className={`inline-block rounded-full px-2 py-0.5 text-xs font-semibold ${
-                        u.status === "active"
-                          ? "bg-green-100 text-green-800"
-                          : "bg-yellow-100 text-yellow-800"
-                      }`}
-                    >
-                      {u.status === "active" ? "Active" : "Pending"}
-                    </span>
-                  </td>
+                  <td className="px-2 py-3">{statusBadge(u.status)}</td>
                   <td className="px-2 py-3 text-center">
                     {u.status === "active" ? (
                       <span className="text-sm font-medium text-brand-gray-600">
@@ -163,6 +183,17 @@ export default function PartnersPage() {
                         {copiedToken === u.invite_token
                           ? "Copied!"
                           : "Copy Link"}
+                      </button>
+                    ) : u.status === "pending_approval" ? (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          void approvePartner(u.id);
+                        }}
+                        className="cursor-pointer rounded bg-purple-400 px-3 py-1 text-xs font-medium text-white"
+                      >
+                        Approve
                       </button>
                     ) : u.status === "active" ? (
                       <span className="text-xs text-brand-gray-200">Used</span>
@@ -248,6 +279,27 @@ function UserDetailModal({
     try {
       await apiFetch(`/api/users/${String(user.id)}`, { method: "DELETE" });
       onUpdated();
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleApprove = async () => {
+    setSubmitting(true);
+    try {
+      const res = await apiFetch(`/api/users/${String(user.id)}`, {
+        method: "PATCH",
+        body: JSON.stringify({ status: "active" }),
+      });
+      if (!res.ok) {
+        const data = (await res.json().catch(() => null)) as {
+          message?: string;
+        } | null;
+        throw new Error(data?.message ?? "Failed to approve");
+      }
+      onUpdated();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong");
     } finally {
       setSubmitting(false);
     }
@@ -359,7 +411,13 @@ function UserDetailModal({
               <DetailRow label="Website" value={user.website} />
               <DetailRow
                 label="Status"
-                value={user.status === "active" ? "Active" : "Pending"}
+                value={
+                  user.status === "active"
+                    ? "Active"
+                    : user.status === "pending_approval"
+                      ? "Pending Approval"
+                      : "Pending"
+                }
               />
               <DetailRow label="Referrals" value={user.referral_count} />
               {user.referral_code ? (
@@ -373,6 +431,18 @@ function UserDetailModal({
                 value={new Date(user.created_at).toLocaleDateString()}
               />
             </div>
+            {user.status === "pending_approval" ? (
+              <button
+                type="button"
+                disabled={submitting}
+                onClick={() => {
+                  void handleApprove();
+                }}
+                className="mb-2 w-full cursor-pointer rounded bg-purple-600 py-3 text-sm font-medium text-white disabled:opacity-70"
+              >
+                {submitting ? "Approving..." : "Approve Partner"}
+              </button>
+            ) : null}
             <div className="flex gap-2">
               <button
                 type="button"

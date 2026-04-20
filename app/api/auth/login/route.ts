@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
 
   const sql = getDb();
   const rows = await sql`
-    SELECT id, first_name, last_name, email, password_hash, website, is_admin, referral_code
+    SELECT id, first_name, last_name, email, password_hash, website, is_admin, referral_code, status
     FROM users WHERE email = ${email}
   `;
 
@@ -26,6 +26,23 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       { message: "Invalid credentials" },
       { status: 401 },
+    );
+  }
+
+  if (user.status === "pending_approval") {
+    return NextResponse.json(
+      {
+        message:
+          "Your account is pending admin approval. You'll be notified once it's accepted.",
+      },
+      { status: 403 },
+    );
+  }
+
+  if (user.status !== "active") {
+    return NextResponse.json(
+      { message: "Your account is not active. Please contact support." },
+      { status: 403 },
     );
   }
 

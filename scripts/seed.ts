@@ -101,6 +101,7 @@ async function main() {
       status TEXT NOT NULL DEFAULT 'pending',
       admin_note TEXT NOT NULL DEFAULT '',
       reviewed_at TIMESTAMPTZ,
+      paid_at TIMESTAMPTZ,
       created_at TIMESTAMPTZ DEFAULT NOW()
     )
   `;
@@ -187,6 +188,22 @@ async function main() {
     console.log("Seeded test partner: test@gmail.com / password123 (with pending lead)");
   } else {
     console.log("Test partner already exists, skipping");
+  }
+
+  // Seed a second partner that is still awaiting admin approval
+  const existingPending = await sql`SELECT id FROM users WHERE email = 'pending@gmail.com'`;
+  if (existingPending.length === 0) {
+    const pendingHash = await bcrypt.hash("password123", 12);
+    const pendingReferralCode = crypto.randomBytes(6).toString("hex");
+    await sql`
+      INSERT INTO users (first_name, last_name, email, password_hash, website, referral_code, status, is_admin)
+      VALUES ('Pending', 'Partner', 'pending@gmail.com', ${pendingHash}, 'https://example.com', ${pendingReferralCode}, 'pending_approval', false)
+    `;
+    console.log(
+      "Seeded unapproved partner: pending@gmail.com / password123 (status: pending_approval)",
+    );
+  } else {
+    console.log("Unapproved test partner already exists, skipping");
   }
 
   console.log("Done!");

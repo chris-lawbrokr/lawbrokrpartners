@@ -41,10 +41,12 @@ export default function InvitePage() {
       <div className="flex h-screen w-screen items-center justify-center bg-brand-gray-50">
         <div className="max-w-md rounded-2xl bg-white p-10 text-center shadow-sm">
           <h1 className="mb-3 text-2xl font-bold text-brand-gray-600">
-            Account Created
+            Enrollment Submitted
           </h1>
           <p className="mb-6 text-sm text-brand-gray-300">
-            Your account has been set up.
+            Thanks for enrolling! Your account is pending admin approval.
+            You&apos;ll be able to log in once an admin reviews and accepts
+            your enrollment.
           </p>
           <button
             type="button"

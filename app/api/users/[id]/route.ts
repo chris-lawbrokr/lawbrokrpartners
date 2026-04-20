@@ -38,7 +38,15 @@ export async function PATCH(
     lastName?: string;
     email?: string;
     website?: string;
+    status?: string;
   };
+
+  if (body.status !== undefined && body.status !== "active") {
+    return NextResponse.json(
+      { message: "Status can only be set to 'active'" },
+      { status: 400 },
+    );
+  }
 
   const sql = getDb();
 
@@ -59,7 +67,8 @@ export async function PATCH(
       first_name = COALESCE(${body.firstName ?? null}, first_name),
       last_name = COALESCE(${body.lastName ?? null}, last_name),
       email = COALESCE(${body.email ?? null}, email),
-      website = COALESCE(${body.website ?? null}, website)
+      website = COALESCE(${body.website ?? null}, website),
+      status = COALESCE(${body.status ?? null}, status)
     WHERE id = ${id}
   `;
 
