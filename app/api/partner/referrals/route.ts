@@ -42,11 +42,19 @@ export async function POST(request: NextRequest) {
   if (auth instanceof NextResponse) return auth;
 
   const body = (await request.json()) as {
+    rewardId?: number;
     leadName?: string;
     leadEmail?: string;
     leadPhone?: string;
     notes?: string;
   };
+
+  if (!body.rewardId) {
+    return NextResponse.json(
+      { message: "Offer is required" },
+      { status: 400 },
+    );
+  }
 
   if (!body.leadName && !body.leadEmail) {
     return NextResponse.json(
@@ -56,6 +64,11 @@ export async function POST(request: NextRequest) {
   }
 
   const sql = getDb();
+
+  const rewards = await sql`SELECT id FROM rewards WHERE id = ${body.rewardId}`;
+  if (rewards.length === 0) {
+    return NextResponse.json({ message: "Offer not found" }, { status: 404 });
+  }
 
   // Get the partner's referral code
   const userRows = await sql`SELECT referral_code FROM users WHERE id = ${auth.userId}`;

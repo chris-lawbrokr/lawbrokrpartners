@@ -324,6 +324,12 @@ export default function PartnerDashboard() {
   );
 }
 
+interface RewardOption {
+  id: number;
+  description: string;
+  type: string;
+}
+
 function AddLeadModal({
   onClose,
   onCreated,
@@ -331,6 +337,9 @@ function AddLeadModal({
   onClose: () => void;
   onCreated: () => void;
 }) {
+  const [rewards, setRewards] = useState<RewardOption[]>([]);
+  const [loadingRewards, setLoadingRewards] = useState(true);
+  const [rewardId, setRewardId] = useState("");
   const [leadFirstName, setLeadFirstName] = useState("");
   const [leadLastName, setLeadLastName] = useState("");
   const [leadEmail, setLeadEmail] = useState("");
@@ -339,15 +348,38 @@ function AddLeadModal({
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
+  useEffect(() => {
+    async function load() {
+      const res = await apiFetch("/api/rewards");
+      if (res.ok) {
+        setRewards((await res.json()) as RewardOption[]);
+      }
+      setLoadingRewards(false);
+    }
+    void load();
+  }, []);
+
   const handleSubmit = async (e: React.SyntheticEvent) => {
     e.preventDefault();
     setError(null);
+
+    if (!rewardId) {
+      setError("Please select an offer.");
+      return;
+    }
+
     setSubmitting(true);
 
     try {
       const res = await apiFetch("/api/partner/referrals", {
         method: "POST",
-        body: JSON.stringify({ leadName: `${leadFirstName} ${leadLastName}`.trim(), leadEmail, leadPhone, notes }),
+        body: JSON.stringify({
+          rewardId: Number(rewardId),
+          leadName: `${leadFirstName} ${leadLastName}`.trim(),
+          leadEmail,
+          leadPhone,
+          notes,
+        }),
       });
 
       if (!res.ok) {
@@ -385,12 +417,35 @@ function AddLeadModal({
           </div>
         ) : null}
 
+        {loadingRewards ? (
+          <div className="flex justify-center py-10">
+            <div className="h-5 w-5 animate-spin rounded-full border-2 border-purple-200 border-t-purple-500" />
+          </div>
+        ) : (
         <form
           onSubmit={(e) => {
             void handleSubmit(e);
           }}
           className="flex flex-col gap-3"
         >
+          <label className="flex flex-col gap-1 text-sm font-medium">
+            Offer *
+            <select
+              value={rewardId}
+              onChange={(e) => {
+                setRewardId(e.target.value);
+              }}
+              required
+              className="w-full rounded border border-brand-gray-100 bg-brand-gray-50 px-3 py-2 text-base outline-none focus:border-purple-400"
+            >
+              <option value="">Select an offer</option>
+              {rewards.map((r) => (
+                <option key={r.id} value={r.id}>
+                  {r.description} ({r.type === "yearly" ? "Yearly" : "Monthly"})
+                </option>
+              ))}
+            </select>
+          </label>
           <div className="flex gap-3">
             <label className="flex flex-1 flex-col gap-1 text-sm font-medium">
               Lead First Name *
@@ -469,6 +524,7 @@ function AddLeadModal({
             </button>
           </div>
         </form>
+        )}
       </div>
     </div>
   );
