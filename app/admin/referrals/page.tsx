@@ -126,19 +126,17 @@ export default function AdminReferralsPage() {
                         }}
                         className="cursor-pointer rounded-lg border border-gray-200 bg-white p-3 text-left transition-shadow hover:shadow-md"
                       >
-                        <p className="text-sm font-medium text-brand-gray-500">
+                        <p className="truncate text-sm font-medium text-brand-gray-500">
                           {`${r.first_name} ${r.last_name}`.trim() ||
                             r.partner_email}
                         </p>
-                        {r.lead_name || r.lead_email ? (
-                          <p className="mt-1 truncate text-xs text-brand-gray-300">
-                            {r.lead_name || r.lead_email}
-                          </p>
-                        ) : (
-                          <p className="mt-1 text-xs text-brand-gray-200">
-                            No lead details
-                          </p>
-                        )}
+                        <p className="mt-1 truncate text-xs text-brand-gray-300">
+                          {r.lead_email || (
+                            <span className="text-brand-gray-200">
+                              No lead email
+                            </span>
+                          )}
+                        </p>
                         <div className="mt-2 flex items-center justify-between">
                           <span
                             className={`text-xs font-medium ${r.source === "manual" ? "text-purple-500" : "text-brand-gray-300"}`}
