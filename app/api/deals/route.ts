@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
     isDefault?: boolean;
   };
 
-  if (!body.title?.trim()) {
+  if (!body.title.trim()) {
     return NextResponse.json({ message: "Title is required" }, { status: 400 });
   }
 

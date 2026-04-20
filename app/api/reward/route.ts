@@ -20,8 +20,8 @@ export async function PUT(request: NextRequest) {
   const sql = getDb();
   await sql`
     INSERT INTO reward (id, title, description)
-    VALUES (1, ${body.title ?? ""}, ${body.description ?? ""})
-    ON CONFLICT (id) DO UPDATE SET title = ${body.title ?? ""}, description = ${body.description ?? ""}
+    VALUES (1, ${body.title}, ${body.description})
+    ON CONFLICT (id) DO UPDATE SET title = ${body.title}, description = ${body.description}
   `;
-  return NextResponse.json({ title: body.title ?? "", description: body.description ?? "" });
+  return NextResponse.json({ title: body.title, description: body.description });
 }
