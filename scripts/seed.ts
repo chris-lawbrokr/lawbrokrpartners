@@ -180,12 +180,9 @@ async function main() {
     `;
     const partnerId = partnerRows[0]?.id as number;
 
-    const rewardRows = await sql`SELECT id FROM rewards WHERE type = 'monthly' ORDER BY sort_order LIMIT 1`;
-    const rewardId = rewardRows[0]?.id as number | undefined;
-
     await sql`
       INSERT INTO referrals (partner_id, reward_id, referral_code, source, lead_name, lead_email, lead_phone, notes, status)
-      VALUES (${partnerId}, ${rewardId ?? null}, ${partnerReferralCode}, 'manual', 'Sample Lead', 'lead@example.com', '(555) 123-4567', 'Test lead awaiting review', 'submitted')
+      VALUES (${partnerId}, NULL, ${partnerReferralCode}, 'manual', 'Sample Lead', 'lead@example.com', '(555) 123-4567', 'Test lead awaiting review', 'submitted')
     `;
     console.log("Seeded test partner: test@gmail.com / password123 (with pending lead)");
   } else {
