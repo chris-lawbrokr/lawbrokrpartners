@@ -52,11 +52,16 @@ const columns = [
   { key: "closed_lost", label: "Closed Lost", color: "border-purple-300" },
 ] as const;
 
-type DroppableStatus = "demo_booked" | "closed_won" | "closed_lost";
+type DroppableStatus =
+  | "submitted"
+  | "demo_booked"
+  | "closed_won"
+  | "closed_lost";
 
 export default function AdminReferralsPage() {
   const { user } = useAuth();
   const [referrals, setReferrals] = useState<Referral[]>([]);
+  const [rewards, setRewards] = useState<RewardOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedReferral, setSelectedReferral] = useState<Referral | null>(
     null,
@@ -66,9 +71,15 @@ export default function AdminReferralsPage() {
   const [dragOverCol, setDragOverCol] = useState<string | null>(null);
 
   const loadData = useCallback(async () => {
-    const res = await apiFetch("/api/referrals");
-    if (res.ok) {
-      setReferrals((await res.json()) as Referral[]);
+    const [referralsRes, rewardsRes] = await Promise.all([
+      apiFetch("/api/referrals"),
+      apiFetch("/api/rewards"),
+    ]);
+    if (referralsRes.ok) {
+      setReferrals((await referralsRes.json()) as Referral[]);
+    }
+    if (rewardsRes.ok) {
+      setRewards((await rewardsRes.json()) as RewardOption[]);
     }
     setLoading(false);
   }, []);
@@ -87,13 +98,48 @@ export default function AdminReferralsPage() {
   const handleDrop = async (id: number, newStatus: DroppableStatus) => {
     const ref = referrals.find((r) => r.id === id);
     if (!ref || ref.status === newStatus) return;
-    // Optimistic update
+    // Optimistic update — also clear offer since the server clears reward_id on status change
     setReferrals((prev) =>
-      prev.map((r) => (r.id === id ? { ...r, status: newStatus } : r)),
+      prev.map((r) =>
+        r.id === id
+          ? {
+              ...r,
+              status: newStatus,
+              reward_id: null,
+              reward_description: null,
+              reward_type: null,
+            }
+          : r,
+      ),
     );
     const res = await apiFetch(`/api/referrals/${String(id)}`, {
       method: "PATCH",
       body: JSON.stringify({ status: newStatus, adminNote: ref.admin_note }),
+    });
+    if (!res.ok) {
+      void loadData();
+    }
+  };
+
+  const handleSetReward = async (id: number, rewardId: number | null) => {
+    const reward = rewardId
+      ? rewards.find((r) => r.id === rewardId) ?? null
+      : null;
+    setReferrals((prev) =>
+      prev.map((r) =>
+        r.id === id
+          ? {
+              ...r,
+              reward_id: rewardId,
+              reward_description: reward?.description ?? null,
+              reward_type: reward?.type ?? null,
+            }
+          : r,
+      ),
+    );
+    const res = await apiFetch(`/api/referrals/${String(id)}`, {
+      method: "PATCH",
+      body: JSON.stringify({ rewardId }),
     });
     if (!res.ok) {
       void loadData();
@@ -124,17 +170,13 @@ export default function AdminReferralsPage() {
         <div className="flex gap-4 overflow-x-auto pb-4">
           {columns.map((col) => {
             const items = grouped[col.key];
-            const isDroppable =
-              col.key === "demo_booked" ||
-              col.key === "closed_won" ||
-              col.key === "closed_lost";
-            const isDragOver = dragOverCol === col.key && isDroppable;
+            const isDragOver = dragOverCol === col.key;
             return (
               <div
                 key={col.key}
                 className="flex min-w-[250px] flex-1 flex-col"
                 onDragOver={(e) => {
-                  if (!isDroppable || draggingId === null) return;
+                  if (draggingId === null) return;
                   e.preventDefault();
                   if (dragOverCol !== col.key) setDragOverCol(col.key);
                 }}
@@ -145,7 +187,7 @@ export default function AdminReferralsPage() {
                 onDrop={(e) => {
                   e.preventDefault();
                   setDragOverCol(null);
-                  if (!isDroppable || draggingId === null) return;
+                  if (draggingId === null) return;
                   void handleDrop(draggingId, col.key as DroppableStatus);
                   setDraggingId(null);
                 }}
@@ -167,9 +209,8 @@ export default function AdminReferralsPage() {
                     </div>
                   ) : (
                     items.map((r) => (
-                      <button
+                      <div
                         key={r.id}
-                        type="button"
                         draggable
                         onDragStart={(e) => {
                           setDraggingId(r.id);
@@ -179,33 +220,65 @@ export default function AdminReferralsPage() {
                           setDraggingId(null);
                           setDragOverCol(null);
                         }}
-                        onClick={() => {
-                          setSelectedReferral(r);
-                        }}
-                        className={`cursor-grab rounded-lg border border-gray-200 bg-white p-3 text-left transition-shadow hover:shadow-md active:cursor-grabbing ${draggingId === r.id ? "opacity-40" : ""}`}
+                        className={`cursor-grab rounded-lg border border-gray-200 bg-white p-3 transition-shadow hover:shadow-md active:cursor-grabbing ${draggingId === r.id ? "opacity-40" : ""}`}
                       >
-                        <p className="truncate text-sm font-medium text-brand-gray-500">
-                          {`${r.first_name} ${r.last_name}`.trim() ||
-                            r.partner_email}
-                        </p>
-                        <p className="mt-1 truncate text-xs text-brand-gray-300">
-                          {r.lead_email || (
-                            <span className="text-brand-gray-200">
-                              No lead email
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedReferral(r);
+                          }}
+                          className="w-full cursor-pointer text-left"
+                        >
+                          <p className="truncate text-sm font-medium text-brand-gray-500">
+                            {`${r.first_name} ${r.last_name}`.trim() ||
+                              r.partner_email}
+                          </p>
+                          <p className="mt-1 truncate text-xs text-brand-gray-300">
+                            {r.lead_email || (
+                              <span className="text-brand-gray-200">
+                                No lead email
+                              </span>
+                            )}
+                          </p>
+                          <div className="mt-2 flex items-center justify-between">
+                            <span
+                              className={`text-xs font-medium ${r.source === "manual" ? "text-purple-500" : "text-brand-gray-300"}`}
+                            >
+                              {r.source === "manual" ? "Manual" : "Link"}
                             </span>
-                          )}
-                        </p>
-                        <div className="mt-2 flex items-center justify-between">
-                          <span
-                            className={`text-xs font-medium ${r.source === "manual" ? "text-purple-500" : "text-brand-gray-300"}`}
+                            <span className="text-xs text-brand-gray-200">
+                              {new Date(r.created_at).toLocaleDateString()}
+                            </span>
+                          </div>
+                        </button>
+                        {col.key === "closed_won" ? (
+                          <select
+                            value={r.reward_id ?? ""}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              void handleSetReward(
+                                r.id,
+                                val === "" ? null : Number(val),
+                              );
+                            }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                            }}
+                            onMouseDown={(e) => {
+                              e.stopPropagation();
+                            }}
+                            className="mt-2 w-full cursor-pointer rounded border border-brand-gray-100 bg-brand-gray-50 px-2 py-1 text-xs outline-none focus:border-purple-400"
                           >
-                            {r.source === "manual" ? "Manual" : "Link"}
-                          </span>
-                          <span className="text-xs text-brand-gray-200">
-                            {new Date(r.created_at).toLocaleDateString()}
-                          </span>
-                        </div>
-                      </button>
+                            <option value="">No offer</option>
+                            {rewards.map((opt) => (
+                              <option key={opt.id} value={opt.id}>
+                                {opt.description} (
+                                {opt.type === "yearly" ? "Yearly" : "Monthly"})
+                              </option>
+                            ))}
+                          </select>
+                        ) : null}
+                      </div>
                     ))
                   )}
                 </div>

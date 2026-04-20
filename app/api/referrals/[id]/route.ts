@@ -15,18 +15,32 @@ export async function PATCH(
   const body = (await request.json()) as {
     status?: string;
     adminNote?: string;
+    rewardId?: number | null;
   };
 
-  if (
-    body.status !== "demo_booked" &&
-    body.status !== "closed_won" &&
-    body.status !== "closed_lost"
-  ) {
+  const validStatuses = [
+    "submitted",
+    "demo_booked",
+    "closed_won",
+    "closed_lost",
+  ];
+
+  const statusProvided = body.status !== undefined;
+  const rewardProvided = "rewardId" in body;
+
+  if (statusProvided && !validStatuses.includes(body.status!)) {
     return NextResponse.json(
       {
         message:
-          "Status must be 'demo_booked', 'closed_won', or 'closed_lost'",
+          "Status must be 'submitted', 'demo_booked', 'closed_won', or 'closed_lost'",
       },
+      { status: 400 },
+    );
+  }
+
+  if (!statusProvided && !rewardProvided) {
+    return NextResponse.json(
+      { message: "No update fields provided" },
       { status: 400 },
     );
   }
@@ -38,13 +52,23 @@ export async function PATCH(
     return NextResponse.json({ message: "Referral not found" }, { status: 404 });
   }
 
-  await sql`
-    UPDATE referrals SET
-      status = ${body.status},
-      admin_note = ${body.adminNote ?? ""},
-      reviewed_at = NOW()
-    WHERE id = ${id}
-  `;
+  if (statusProvided) {
+    // Status change clears any attached offer
+    await sql`
+      UPDATE referrals SET
+        status = ${body.status!},
+        admin_note = ${body.adminNote ?? ""},
+        reward_id = NULL,
+        reviewed_at = NOW()
+      WHERE id = ${id}
+    `;
+  } else if (rewardProvided) {
+    await sql`
+      UPDATE referrals SET
+        reward_id = ${body.rewardId ?? null}
+      WHERE id = ${id}
+    `;
+  }
 
   return NextResponse.json({ ok: true });
 }
