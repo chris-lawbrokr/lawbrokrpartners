@@ -7,6 +7,7 @@
  * Requires DATABASE_URL in .env.local or environment.
  */
 
+import crypto from "crypto";
 import { neon } from "@neondatabase/serverless";
 import bcrypt from "bcryptjs";
 
@@ -21,10 +22,10 @@ async function main() {
 
   // Drop old tables (order matters — drop dependents first)
   await sql`DROP TABLE IF EXISTS payout_methods`;
+  await sql`DROP TABLE IF EXISTS referrals`;
   await sql`DROP TABLE IF EXISTS rewards`;
   await sql`DROP TABLE IF EXISTS reward`;
   await sql`DROP TABLE IF EXISTS deals`;
-  await sql`DROP TABLE IF EXISTS referrals`;
   await sql`DROP TABLE IF EXISTS invites`;
   await sql`DROP TABLE IF EXISTS users`;
 
@@ -72,6 +73,14 @@ async function main() {
     )
   `;
   console.log("Created rewards table");
+
+  await sql`
+    INSERT INTO rewards (category, type, description, note, sort_order)
+    VALUES
+      ('promoter', 'monthly', '10% commission one-time (annualized) for monthly accounts', '', 0),
+      ('promoter', 'yearly', '20% commission one-time of annual contract value', '', 1)
+  `;
+  console.log("Seeded default rewards");
 
   // Create referrals table
   // source: 'link' (from referral link) or 'manual' (partner submitted)
@@ -157,6 +166,30 @@ async function main() {
     console.log("Seeded admin user: admin@lawbrokr.ca / password123");
   } else {
     console.log("Admin user already exists, skipping");
+  }
+
+  // Seed test partner with an un-approved lead
+  const existingPartner = await sql`SELECT id FROM users WHERE email = 'test@gmail.com'`;
+  if (existingPartner.length === 0) {
+    const partnerHash = await bcrypt.hash("password123", 12);
+    const partnerReferralCode = crypto.randomBytes(6).toString("hex");
+    const partnerRows = await sql`
+      INSERT INTO users (first_name, last_name, email, password_hash, website, referral_code, status, is_admin)
+      VALUES ('Test', 'Partner', 'test@gmail.com', ${partnerHash}, 'https://example.com', ${partnerReferralCode}, 'active', false)
+      RETURNING id
+    `;
+    const partnerId = partnerRows[0]?.id as number;
+
+    const rewardRows = await sql`SELECT id FROM rewards WHERE type = 'monthly' ORDER BY sort_order LIMIT 1`;
+    const rewardId = rewardRows[0]?.id as number | undefined;
+
+    await sql`
+      INSERT INTO referrals (partner_id, reward_id, referral_code, source, lead_name, lead_email, lead_phone, notes, status)
+      VALUES (${partnerId}, ${rewardId ?? null}, ${partnerReferralCode}, 'manual', 'Sample Lead', 'lead@example.com', '(555) 123-4567', 'Test lead awaiting review', 'submitted')
+    `;
+    console.log("Seeded test partner: test@gmail.com / password123 (with pending lead)");
+  } else {
+    console.log("Test partner already exists, skipping");
   }
 
   console.log("Done!");

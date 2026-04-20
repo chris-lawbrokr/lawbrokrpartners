@@ -125,19 +125,24 @@ Uses `typescript-eslint` strict type-checked rules on top of the Next.js default
 - **`no-unsafe-*`** — `any` leaking into typed code
 - **`restrict-template-expressions`** — non-string types in template literals
 
----
-
-```
-rm -rf .next && npm run dev
-```
-
-left to right drag drop status cards
-
-rewards
-
 #### min details
 
 company name
 comnpany website
 lead email
 lead phone number
+
+---
+
+rewards
+
+left to right drag drop status cards
+rewards
+
+```
+rm -rf .next && npm run dev
+```
+
+```
+npm run db:seed
+```
