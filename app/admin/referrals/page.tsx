@@ -52,6 +52,8 @@ const columns = [
   { key: "closed_lost", label: "Closed Lost", color: "border-purple-300" },
 ] as const;
 
+type DroppableStatus = "demo_booked" | "closed_won" | "closed_lost";
+
 export default function AdminReferralsPage() {
   const { user } = useAuth();
   const [referrals, setReferrals] = useState<Referral[]>([]);
@@ -60,6 +62,8 @@ export default function AdminReferralsPage() {
     null,
   );
   const [showAddReferral, setShowAddReferral] = useState(false);
+  const [draggingId, setDraggingId] = useState<number | null>(null);
+  const [dragOverCol, setDragOverCol] = useState<string | null>(null);
 
   const loadData = useCallback(async () => {
     const res = await apiFetch("/api/referrals");
@@ -78,6 +82,22 @@ export default function AdminReferralsPage() {
     demo_booked: referrals.filter((r) => r.status === "demo_booked"),
     closed_won: referrals.filter((r) => r.status === "closed_won"),
     closed_lost: referrals.filter((r) => r.status === "closed_lost"),
+  };
+
+  const handleDrop = async (id: number, newStatus: DroppableStatus) => {
+    const ref = referrals.find((r) => r.id === id);
+    if (!ref || ref.status === newStatus) return;
+    // Optimistic update
+    setReferrals((prev) =>
+      prev.map((r) => (r.id === id ? { ...r, status: newStatus } : r)),
+    );
+    const res = await apiFetch(`/api/referrals/${String(id)}`, {
+      method: "PATCH",
+      body: JSON.stringify({ status: newStatus, adminNote: ref.admin_note }),
+    });
+    if (!res.ok) {
+      void loadData();
+    }
   };
 
   return (
@@ -104,8 +124,32 @@ export default function AdminReferralsPage() {
         <div className="flex gap-4 overflow-x-auto pb-4">
           {columns.map((col) => {
             const items = grouped[col.key];
+            const isDroppable =
+              col.key === "demo_booked" ||
+              col.key === "closed_won" ||
+              col.key === "closed_lost";
+            const isDragOver = dragOverCol === col.key && isDroppable;
             return (
-              <div key={col.key} className="flex min-w-[250px] flex-1 flex-col">
+              <div
+                key={col.key}
+                className="flex min-w-[250px] flex-1 flex-col"
+                onDragOver={(e) => {
+                  if (!isDroppable || draggingId === null) return;
+                  e.preventDefault();
+                  if (dragOverCol !== col.key) setDragOverCol(col.key);
+                }}
+                onDragLeave={(e) => {
+                  if (e.currentTarget.contains(e.relatedTarget as Node)) return;
+                  if (dragOverCol === col.key) setDragOverCol(null);
+                }}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  setDragOverCol(null);
+                  if (!isDroppable || draggingId === null) return;
+                  void handleDrop(draggingId, col.key as DroppableStatus);
+                  setDraggingId(null);
+                }}
+              >
                 <div
                   className={`mb-3 flex items-center justify-between border-t-2 ${col.color} pt-3`}
                 >
@@ -114,20 +158,31 @@ export default function AdminReferralsPage() {
                     {items.length}
                   </span>
                 </div>
-                <div className="flex flex-1 flex-col gap-2">
+                <div
+                  className={`flex flex-1 flex-col gap-2 rounded-lg p-1 transition-colors ${isDragOver ? "bg-purple-50 ring-2 ring-purple-300" : ""}`}
+                >
                   {items.length === 0 ? (
                     <div className="flex min-h-[88px] items-center justify-center rounded-lg border border-dashed border-gray-200 p-3 text-xs text-brand-gray-200">
-                      No referrals
+                      {isDragOver ? "Drop here" : "No referrals"}
                     </div>
                   ) : (
                     items.map((r) => (
                       <button
                         key={r.id}
                         type="button"
+                        draggable
+                        onDragStart={(e) => {
+                          setDraggingId(r.id);
+                          e.dataTransfer.effectAllowed = "move";
+                        }}
+                        onDragEnd={() => {
+                          setDraggingId(null);
+                          setDragOverCol(null);
+                        }}
                         onClick={() => {
                           setSelectedReferral(r);
                         }}
-                        className="cursor-pointer rounded-lg border border-gray-200 bg-white p-3 text-left transition-shadow hover:shadow-md"
+                        className={`cursor-grab rounded-lg border border-gray-200 bg-white p-3 text-left transition-shadow hover:shadow-md active:cursor-grabbing ${draggingId === r.id ? "opacity-40" : ""}`}
                       >
                         <p className="truncate text-sm font-medium text-brand-gray-500">
                           {`${r.first_name} ${r.last_name}`.trim() ||
