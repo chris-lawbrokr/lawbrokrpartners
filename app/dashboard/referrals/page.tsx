@@ -20,11 +20,19 @@ interface MyReferral {
 }
 
 const columns = [
-  { key: "submitted", label: "Under Review", color: "border-purple-50" },
-  { key: "unpaid", label: "Unpaid", color: "border-purple-100" },
-  { key: "paid", label: "Paid", color: "border-purple-200" },
-  { key: "rejected", label: "Rejected", color: "border-purple-300" },
+  { key: "submitted", label: "Lead Submitted", color: "border-purple-50" },
+  { key: "demo_booked", label: "Demo Booked", color: "border-purple-100" },
+  { key: "closed_won", label: "Closed Won", color: "border-purple-200" },
+  { key: "closed_lost", label: "Closed Lost", color: "border-purple-300" },
 ] as const;
+
+const statusLabels: Record<string, string> = {
+  pending: "Link Click",
+  submitted: "Lead Submitted",
+  demo_booked: "Demo Booked",
+  closed_won: "Closed Won",
+  closed_lost: "Closed Lost",
+};
 
 export default function PartnerReferralsPage() {
   const { user } = useAuth();
@@ -52,9 +60,9 @@ export default function PartnerReferralsPage() {
 
   const grouped = {
     submitted: referrals.filter((r) => r.status === "submitted"),
-    unpaid: referrals.filter((r) => r.status === "approved"),
-    paid: referrals.filter((r) => r.status === "paid"),
-    rejected: referrals.filter((r) => r.status === "rejected"),
+    demo_booked: referrals.filter((r) => r.status === "demo_booked"),
+    closed_won: referrals.filter((r) => r.status === "closed_won"),
+    closed_lost: referrals.filter((r) => r.status === "closed_lost"),
   };
 
   return (
@@ -304,7 +312,10 @@ function ReferralDetailModal({
               <DetailRow label="Lead Email" value={referral.lead_email} />
               <DetailRow label="Lead Phone" value={referral.lead_phone} />
               <DetailRow label="Notes" value={referral.notes} />
-              <DetailRow label="Status" value={referral.status} />
+              <DetailRow
+                label="Status"
+                value={statusLabels[referral.status] ?? referral.status}
+              />
               <DetailRow
                 label="Date"
                 value={new Date(referral.created_at).toLocaleString()}

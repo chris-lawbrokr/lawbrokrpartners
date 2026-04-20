@@ -8,6 +8,7 @@ import {
   MousePointerClick,
   Users,
   UserCheck,
+  AlertTriangle,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { apiFetch } from "@/lib/api";
@@ -18,6 +19,14 @@ function formatPhone(value: string): string {
   if (digits.length <= 6) return `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
   return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
 }
+
+const statusLabels: Record<string, string> = {
+  pending: "Link Click",
+  submitted: "Lead Submitted",
+  demo_booked: "Demo Booked",
+  closed_won: "Closed Won",
+  closed_lost: "Closed Lost",
+};
 
 interface MyReferral {
   id: number;
@@ -35,7 +44,7 @@ interface MyReferral {
 
 interface Stats {
   total: string;
-  approved: string;
+  closed_won: string;
   submitted: string;
   pending: string;
 }
@@ -45,7 +54,7 @@ export default function PartnerDashboard() {
   const [referrals, setReferrals] = useState<MyReferral[]>([]);
   const [stats, setStats] = useState<Stats>({
     total: "0",
-    approved: "0",
+    closed_won: "0",
     submitted: "0",
     pending: "0",
   });
@@ -55,6 +64,20 @@ export default function PartnerDashboard() {
   const [selectedReferral, setSelectedReferral] = useState<MyReferral | null>(
     null,
   );
+  const [payoutStatus, setPayoutStatus] = useState<
+    "loading" | "missing" | "configured"
+  >("loading");
+
+  const refreshPayoutStatus = useCallback(async () => {
+    const res = await apiFetch("/api/partner/payout");
+    if (!res.ok) return;
+    const data = (await res.json()) as PayoutMethod | null;
+    setPayoutStatus(data ? "configured" : "missing");
+  }, []);
+
+  useEffect(() => {
+    if (user) void refreshPayoutStatus();
+  }, [user, refreshPayoutStatus]);
 
   const referralLink = user?.referralCode
     ? `https://www.lawbrokr.com/referral?ref=${user.referralCode}`
@@ -89,27 +112,33 @@ export default function PartnerDashboard() {
     const styles: Record<string, string> = {
       pending: "bg-gray-100 text-gray-600",
       submitted: "bg-yellow-100 text-yellow-800",
-      approved: "bg-green-100 text-green-800",
-      rejected: "bg-red-100 text-red-800",
-    };
-    const labels: Record<string, string> = {
-      pending: "Link Click",
-      submitted: "Under Review",
-      approved: "Approved",
-      rejected: "Rejected",
+      demo_booked: "bg-blue-100 text-blue-800",
+      closed_won: "bg-green-100 text-green-800",
+      closed_lost: "bg-red-100 text-red-800",
     };
     return (
       <span
         className={`inline-block rounded-full px-2 py-0.5 text-xs font-semibold ${styles[status] ?? "bg-gray-100 text-gray-600"}`}
       >
-        {labels[status] ?? status}
+        {statusLabels[status] ?? status}
       </span>
     );
   }
 
   return (
     <main className="mx-auto max-w-[900px] p-8">
-      <h1 className="mb-8 text-2xl font-bold">Dashboard</h1>
+      <h1 className="mb-6 text-2xl font-bold">Dashboard</h1>
+
+      {payoutStatus === "missing" ? (
+        <div className="mb-6 flex items-start gap-3 rounded-lg border border-yellow-200 bg-yellow-50 p-4">
+          <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-yellow-700" />
+          <p className="text-sm text-yellow-800">
+            No payout method configured. Scroll down to &quot;Payout
+            Method&quot; and click &quot;Set up&quot; to add your bank
+            information.
+          </p>
+        </div>
+      ) : null}
 
       {/* Summary Cards */}
       <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -160,7 +189,7 @@ export default function PartnerDashboard() {
           </div>
           <div className="flex items-center gap-2 text-purple-900">
             <UserCheck className="h-5 w-5" />
-            <span className="text-base font-bold">{stats.approved}</span>
+            <span className="text-base font-bold">{stats.closed_won}</span>
             <span className="text-sm text-brand-gray-300">customers</span>
           </div>
         </div>
@@ -251,7 +280,7 @@ export default function PartnerDashboard() {
                       >
                         {r.status === "pending" ? "Add Details" : "View"}
                       </button>
-                    ) : r.status === "approved" || r.status === "rejected" ? (
+                    ) : (
                       <button
                         type="button"
                         onClick={() => {
@@ -261,7 +290,7 @@ export default function PartnerDashboard() {
                       >
                         View
                       </button>
-                    ) : null}
+                    )}
                   </td>
                 </tr>
               ))
@@ -319,7 +348,7 @@ export default function PartnerDashboard() {
       ) : null}
 
       {/* Payout Method */}
-      <PayoutMethodCard />
+      <PayoutMethodCard onChange={refreshPayoutStatus} />
     </main>
   );
 }
@@ -422,108 +451,109 @@ function AddLeadModal({
             <div className="h-5 w-5 animate-spin rounded-full border-2 border-purple-200 border-t-purple-500" />
           </div>
         ) : (
-        <form
-          onSubmit={(e) => {
-            void handleSubmit(e);
-          }}
-          className="flex flex-col gap-3"
-        >
-          <label className="flex flex-col gap-1 text-sm font-medium">
-            Offer *
-            <select
-              value={rewardId}
-              onChange={(e) => {
-                setRewardId(e.target.value);
-              }}
-              required
-              className="w-full rounded border border-brand-gray-100 bg-brand-gray-50 px-3 py-2 text-base outline-none focus:border-purple-400"
-            >
-              <option value="">Select an offer</option>
-              {rewards.map((r) => (
-                <option key={r.id} value={r.id}>
-                  {r.description} ({r.type === "yearly" ? "Yearly" : "Monthly"})
-                </option>
-              ))}
-            </select>
-          </label>
-          <div className="flex gap-3">
-            <label className="flex flex-1 flex-col gap-1 text-sm font-medium">
-              Lead First Name *
-              <input
-                type="text"
-                value={leadFirstName}
+          <form
+            onSubmit={(e) => {
+              void handleSubmit(e);
+            }}
+            className="flex flex-col gap-3"
+          >
+            <label className="flex flex-col gap-1 text-sm font-medium">
+              Offer *
+              <select
+                value={rewardId}
                 onChange={(e) => {
-                  setLeadFirstName(e.target.value);
+                  setRewardId(e.target.value);
                 }}
                 required
                 className="w-full rounded border border-brand-gray-100 bg-brand-gray-50 px-3 py-2 text-base outline-none focus:border-purple-400"
-              />
+              >
+                <option value="">Select an offer</option>
+                {rewards.map((r) => (
+                  <option key={r.id} value={r.id}>
+                    {r.description} (
+                    {r.type === "yearly" ? "Yearly" : "Monthly"})
+                  </option>
+                ))}
+              </select>
             </label>
-            <label className="flex flex-1 flex-col gap-1 text-sm font-medium">
-              Lead Last Name *
+            <div className="flex gap-3">
+              <label className="flex flex-1 flex-col gap-1 text-sm font-medium">
+                Lead First Name *
+                <input
+                  type="text"
+                  value={leadFirstName}
+                  onChange={(e) => {
+                    setLeadFirstName(e.target.value);
+                  }}
+                  required
+                  className="w-full rounded border border-brand-gray-100 bg-brand-gray-50 px-3 py-2 text-base outline-none focus:border-purple-400"
+                />
+              </label>
+              <label className="flex flex-1 flex-col gap-1 text-sm font-medium">
+                Lead Last Name *
+                <input
+                  type="text"
+                  value={leadLastName}
+                  onChange={(e) => {
+                    setLeadLastName(e.target.value);
+                  }}
+                  required
+                  className="w-full rounded border border-brand-gray-100 bg-brand-gray-50 px-3 py-2 text-base outline-none focus:border-purple-400"
+                />
+              </label>
+            </div>
+            <label className="flex flex-col gap-1 text-sm font-medium">
+              Lead Email
               <input
-                type="text"
-                value={leadLastName}
+                type="email"
+                value={leadEmail}
                 onChange={(e) => {
-                  setLeadLastName(e.target.value);
+                  setLeadEmail(e.target.value);
                 }}
-                required
                 className="w-full rounded border border-brand-gray-100 bg-brand-gray-50 px-3 py-2 text-base outline-none focus:border-purple-400"
               />
             </label>
-          </div>
-          <label className="flex flex-col gap-1 text-sm font-medium">
-            Lead Email
-            <input
-              type="email"
-              value={leadEmail}
-              onChange={(e) => {
-                setLeadEmail(e.target.value);
-              }}
-              className="w-full rounded border border-brand-gray-100 bg-brand-gray-50 px-3 py-2 text-base outline-none focus:border-purple-400"
-            />
-          </label>
-          <label className="flex flex-col gap-1 text-sm font-medium">
-            Lead Phone
-            <input
-              type="tel"
-              value={leadPhone}
-              onChange={(e) => {
-                setLeadPhone(formatPhone(e.target.value));
-              }}
-              placeholder="(555) 123-4567"
-              className="w-full rounded border border-brand-gray-100 bg-brand-gray-50 px-3 py-2 text-base outline-none focus:border-purple-400"
-            />
-          </label>
-          <label className="flex flex-col gap-1 text-sm font-medium">
-            Notes
-            <textarea
-              value={notes}
-              onChange={(e) => {
-                setNotes(e.target.value);
-              }}
-              rows={3}
-              placeholder="How did you refer this person?"
-              className="w-full rounded border border-brand-gray-100 bg-brand-gray-50 px-3 py-2 text-base outline-none focus:border-purple-400"
-            />
-          </label>
-          <div className="mt-2 flex gap-2">
-            <button
-              type="submit"
-              disabled={submitting}
-              className="flex-1 cursor-pointer rounded bg-purple-600 py-3 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-70"
-            >
-              {submitting ? "Submitting..." : "Submit for Review"}
-            </button>
-            <button
-              type="button"
-              onClick={onClose}
-              className="cursor-pointer rounded border border-brand-gray-100 bg-transparent px-4 py-3 text-sm"
-            >
-              Cancel
-            </button>
-          </div>
-        </form>
+            <label className="flex flex-col gap-1 text-sm font-medium">
+              Lead Phone
+              <input
+                type="tel"
+                value={leadPhone}
+                onChange={(e) => {
+                  setLeadPhone(formatPhone(e.target.value));
+                }}
+                placeholder="(555) 123-4567"
+                className="w-full rounded border border-brand-gray-100 bg-brand-gray-50 px-3 py-2 text-base outline-none focus:border-purple-400"
+              />
+            </label>
+            <label className="flex flex-col gap-1 text-sm font-medium">
+              Notes
+              <textarea
+                value={notes}
+                onChange={(e) => {
+                  setNotes(e.target.value);
+                }}
+                rows={3}
+                placeholder="How did you refer this person?"
+                className="w-full rounded border border-brand-gray-100 bg-brand-gray-50 px-3 py-2 text-base outline-none focus:border-purple-400"
+              />
+            </label>
+            <div className="mt-2 flex gap-2">
+              <button
+                type="submit"
+                disabled={submitting}
+                className="flex-1 cursor-pointer rounded bg-purple-600 py-3 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-70"
+              >
+                {submitting ? "Submitting..." : "Submit for Review"}
+              </button>
+              <button
+                type="button"
+                onClick={onClose}
+                className="cursor-pointer rounded border border-brand-gray-100 bg-transparent px-4 py-3 text-sm"
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
         )}
       </div>
     </div>
@@ -554,10 +584,19 @@ function ReferralDetailModal({
     setError(null);
     setSubmitting(true);
     try {
-      const res = await apiFetch(`/api/partner/referrals/${String(referral.id)}`, {
-        method: "PATCH",
-        body: JSON.stringify({ leadName, leadEmail, leadPhone, notes, submit }),
-      });
+      const res = await apiFetch(
+        `/api/partner/referrals/${String(referral.id)}`,
+        {
+          method: "PATCH",
+          body: JSON.stringify({
+            leadName,
+            leadEmail,
+            leadPhone,
+            notes,
+            submit,
+          }),
+        },
+      );
       if (!res.ok) {
         const data = (await res.json().catch(() => null)) as {
           message?: string;
@@ -685,7 +724,10 @@ function ReferralDetailModal({
               <DetailRow label="Lead Email" value={referral.lead_email} />
               <DetailRow label="Lead Phone" value={referral.lead_phone} />
               <DetailRow label="Notes" value={referral.notes} />
-              <DetailRow label="Status" value={referral.status} />
+              <DetailRow
+                label="Status"
+                value={statusLabels[referral.status] ?? referral.status}
+              />
               <DetailRow
                 label="Date"
                 value={new Date(referral.created_at).toLocaleString()}
@@ -733,7 +775,7 @@ interface PayoutMethod {
   status: string;
 }
 
-function PayoutMethodCard() {
+function PayoutMethodCard({ onChange }: { onChange: () => void }) {
   const [payout, setPayout] = useState<PayoutMethod | null>(null);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
@@ -755,6 +797,7 @@ function PayoutMethodCard() {
     if (res.ok) {
       setPayout((await res.json()) as PayoutMethod | null);
     }
+    onChange();
   };
 
   return (
@@ -860,7 +903,9 @@ function PayoutEditModal({
     setError(null);
 
     if (!accountHolderName || !accountNumber || !routingNumber) {
-      setError("Account holder name, account number, and routing number are required.");
+      setError(
+        "Account holder name, account number, and routing number are required.",
+      );
       return;
     }
 

@@ -18,7 +18,12 @@ export async function GET(request: NextRequest) {
     JOIN users u ON u.id = r.partner_id
     LEFT JOIN rewards rw ON rw.id = r.reward_id
     ORDER BY
-      CASE r.status WHEN 'submitted' THEN 0 WHEN 'pending' THEN 1 ELSE 2 END,
+      CASE r.status
+        WHEN 'submitted' THEN 0
+        WHEN 'demo_booked' THEN 1
+        WHEN 'pending' THEN 2
+        ELSE 3
+      END,
       r.created_at DESC
   `;
   return NextResponse.json(rows);

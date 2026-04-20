@@ -17,9 +17,16 @@ export async function PATCH(
     adminNote?: string;
   };
 
-  if (body.status !== "approved" && body.status !== "rejected" && body.status !== "paid") {
+  if (
+    body.status !== "demo_booked" &&
+    body.status !== "closed_won" &&
+    body.status !== "closed_lost"
+  ) {
     return NextResponse.json(
-      { message: "Status must be 'approved', 'rejected', or 'paid'" },
+      {
+        message:
+          "Status must be 'demo_booked', 'closed_won', or 'closed_lost'",
+      },
       { status: 400 },
     );
   }

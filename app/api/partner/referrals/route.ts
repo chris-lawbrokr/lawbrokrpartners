@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
   const countRows = await sql`
     SELECT
       COUNT(*) AS total,
-      COUNT(*) FILTER (WHERE status = 'approved') AS approved,
+      COUNT(*) FILTER (WHERE status = 'closed_won') AS closed_won,
       COUNT(*) FILTER (WHERE status = 'submitted') AS submitted,
       COUNT(*) FILTER (WHERE status = 'pending') AS pending
     FROM referrals WHERE partner_id = ${auth.userId}
@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
     referrals: rows,
     stats: {
       total: String(countRows[0]?.total ?? 0),
-      approved: String(countRows[0]?.approved ?? 0),
+      closed_won: String(countRows[0]?.closed_won ?? 0),
       submitted: String(countRows[0]?.submitted ?? 0),
       pending: String(countRows[0]?.pending ?? 0),
     },

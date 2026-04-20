@@ -32,10 +32,14 @@ export async function PATCH(
   }
 
   const referral = rows[0];
-  // Only allow editing if not already approved/rejected
-  if (referral?.status === "approved" || referral?.status === "rejected") {
+  // Only allow editing if not yet closed
+  if (
+    referral?.status === "closed_won" ||
+    referral?.status === "closed_lost" ||
+    referral?.status === "demo_booked"
+  ) {
     return NextResponse.json(
-      { message: "Cannot edit a reviewed referral" },
+      { message: "Cannot edit a referral that has progressed past submission" },
       { status: 400 },
     );
   }
