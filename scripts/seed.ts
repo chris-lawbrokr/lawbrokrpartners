@@ -101,6 +101,7 @@ async function main() {
       visitor_user_agent TEXT,
       status TEXT NOT NULL DEFAULT 'pending',
       admin_note TEXT NOT NULL DEFAULT '',
+      monthly_amount NUMERIC(12, 2),
       reviewed_at TIMESTAMPTZ,
       paid_at TIMESTAMPTZ,
       created_at TIMESTAMPTZ DEFAULT NOW()

@@ -17,6 +17,7 @@ export async function PATCH(
     adminNote?: string;
     rewardId?: number | null;
     paid?: boolean;
+    monthlyAmount?: number | null;
   };
 
   const validStatuses = [
@@ -29,11 +30,13 @@ export async function PATCH(
   const statusProvided = body.status !== undefined;
   const rewardProvided = "rewardId" in body;
   const paidProvided = body.paid !== undefined;
+  const amountProvided = "monthlyAmount" in body;
   const adminNoteOnly =
     body.adminNote !== undefined &&
     !statusProvided &&
     !rewardProvided &&
-    !paidProvided;
+    !paidProvided &&
+    !amountProvided;
 
   if (body.status !== undefined && !validStatuses.includes(body.status)) {
     return NextResponse.json(
@@ -45,7 +48,13 @@ export async function PATCH(
     );
   }
 
-  if (!statusProvided && !rewardProvided && !paidProvided && !adminNoteOnly) {
+  if (
+    !statusProvided &&
+    !rewardProvided &&
+    !paidProvided &&
+    !amountProvided &&
+    !adminNoteOnly
+  ) {
     return NextResponse.json(
       { message: "No update fields provided" },
       { status: 400 },
@@ -60,13 +69,14 @@ export async function PATCH(
   }
 
   if (body.status !== undefined) {
-    // Status change clears any attached offer and paid flag
+    // Status change clears any attached offer, paid flag, and amount
     await sql`
       UPDATE referrals SET
         status = ${body.status},
         admin_note = ${body.adminNote ?? ""},
         reward_id = NULL,
         paid_at = NULL,
+        monthly_amount = NULL,
         reviewed_at = NOW()
       WHERE id = ${id}
     `;
@@ -82,6 +92,12 @@ export async function PATCH(
     } else {
       await sql`UPDATE referrals SET paid_at = NULL WHERE id = ${id}`;
     }
+  } else if (amountProvided) {
+    await sql`
+      UPDATE referrals SET
+        monthly_amount = ${body.monthlyAmount ?? null}
+      WHERE id = ${id}
+    `;
   } else if (body.adminNote !== undefined) {
     await sql`
       UPDATE referrals SET admin_note = ${body.adminNote} WHERE id = ${id}

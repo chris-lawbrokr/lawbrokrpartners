@@ -36,6 +36,7 @@ interface Referral {
   notes: string;
   status: string;
   admin_note: string;
+  monthly_amount: string | null;
   created_at: string;
   reviewed_at: string | null;
   paid_at: string | null;
@@ -190,6 +191,7 @@ export default function AdminReferralsPage() {
               reward_description: null,
               reward_type: null,
               paid_at: null,
+              monthly_amount: null,
             }
           : r,
       ),
@@ -214,6 +216,27 @@ export default function AdminReferralsPage() {
     const res = await apiFetch(`/api/referrals/${String(id)}`, {
       method: "PATCH",
       body: JSON.stringify({ paid }),
+    });
+    if (!res.ok) {
+      void loadData();
+    }
+  };
+
+  const handleSetAmount = async (id: number, monthlyAmount: number | null) => {
+    setReferrals((prev) =>
+      prev.map((r) =>
+        r.id === id
+          ? {
+              ...r,
+              monthly_amount:
+                monthlyAmount === null ? null : monthlyAmount.toFixed(2),
+            }
+          : r,
+      ),
+    );
+    const res = await apiFetch(`/api/referrals/${String(id)}`, {
+      method: "PATCH",
+      body: JSON.stringify({ monthlyAmount }),
     });
     if (!res.ok) {
       void loadData();
@@ -442,41 +465,99 @@ export default function AdminReferralsPage() {
                           onClick={() => {
                             setSelectedReferralId(r.id);
                           }}
-                          className="w-full cursor-pointer text-left"
+                          className={`block w-full cursor-pointer text-left ${col.key === "closed_won" ? "pr-14" : ""}`}
                         >
-                          <p
-                            className={`truncate text-sm font-medium text-brand-gray-500 ${col.key === "closed_won" ? "pr-14" : ""}`}
-                          >
+                          <p className="truncate text-sm font-medium text-brand-gray-500">
                             {`${r.first_name} ${r.last_name}`.trim() ||
                               r.partner_email}
                           </p>
-                          <p className="mt-1 truncate text-xs text-brand-gray-300">
-                            {r.lead_email || (
-                              <span className="text-brand-gray-200">
-                                No lead email
-                              </span>
-                            )}
-                          </p>
-                          {col.key === "closed_won" ? (
-                            <p
-                              className={`mt-1 truncate text-xs ${r.reward_description ? "text-brand-gray-300" : "text-red-400"}`}
-                            >
-                              {r.reward_description
-                                ? `${r.reward_description} (${r.reward_type === "yearly" ? "Yearly" : "Monthly"})`
-                                : "No offer"}
-                            </p>
-                          ) : null}
-                          <div className="mt-2 flex items-center justify-between">
-                            <span
-                              className={`text-xs font-medium ${r.source === "manual" ? "text-purple-500" : "text-brand-gray-300"}`}
-                            >
-                              {r.source === "manual" ? "Manual" : "Link"}
+                        </button>
+                        <div className="mt-3 space-y-2 text-xs">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedReferralId(r.id);
+                            }}
+                            className="flex w-full cursor-pointer items-baseline gap-1 text-left"
+                          >
+                            <span className="w-14 shrink-0 text-brand-gray-300">
+                              Created:
                             </span>
-                            <span className="text-xs text-brand-gray-200">
+                            <span className="text-brand-gray-400">
                               {new Date(r.created_at).toLocaleDateString()}
                             </span>
+                          </button>
+                          <div className="flex w-full items-baseline gap-1">
+                            <span className="w-14 shrink-0 text-brand-gray-300">
+                              Offer:
+                            </span>
+                            <select
+                              aria-label="Offer"
+                              value={r.reward_id ?? ""}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                              }}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                void handleSetReward(
+                                  r.id,
+                                  val === "" ? null : Number(val),
+                                );
+                              }}
+                              className={`min-w-0 flex-1 cursor-pointer truncate rounded border border-brand-gray-100 bg-brand-gray-50/50 py-0.5 pl-1.5 pr-6 text-xs outline-none focus:border-purple-300 focus:outline-none focus:ring-0 ${r.reward_description ? "text-brand-gray-400" : "text-brand-gray-200"}`}
+                            >
+                              <option value="">No offer</option>
+                              {rewards.map((opt) => (
+                                <option key={opt.id} value={opt.id}>
+                                  {opt.description} (
+                                  {opt.type === "yearly"
+                                    ? "Yearly"
+                                    : "Monthly"}
+                                  )
+                                </option>
+                              ))}
+                            </select>
                           </div>
-                        </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedReferralId(r.id);
+                            }}
+                            className="flex w-full cursor-pointer items-baseline gap-1 text-left"
+                          >
+                            <span className="w-14 shrink-0 text-brand-gray-300">
+                              Revenue:
+                            </span>
+                            <span
+                              className={`truncate ${r.monthly_amount ? "text-brand-gray-400" : "text-brand-gray-200"}`}
+                            >
+                              {r.monthly_amount
+                                ? `$${Number(r.monthly_amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}/mo`
+                                : "No amount yet"}
+                            </span>
+                          </button>
+                          {r.status === "closed_won" ||
+                          r.status === "closed_lost" ? (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSelectedReferralId(r.id);
+                              }}
+                              className="flex w-full cursor-pointer items-baseline gap-1 text-left"
+                            >
+                              <span className="w-14 shrink-0 text-brand-gray-300">
+                                Closed:
+                              </span>
+                              <span className="text-brand-gray-400">
+                                {r.reviewed_at
+                                  ? new Date(
+                                      r.reviewed_at,
+                                    ).toLocaleDateString()
+                                  : "-"}
+                              </span>
+                            </button>
+                          ) : null}
+                        </div>
                       </div>
                     ))
                   )}
@@ -519,6 +600,9 @@ export default function AdminReferralsPage() {
                 onSetReward={(rewardId) => {
                   void handleSetReward(selectedReferral.id, rewardId);
                 }}
+                onSetAmount={(amount) => {
+                  void handleSetAmount(selectedReferral.id, amount);
+                }}
                 onTogglePaid={(paid) => {
                   void handleTogglePaid(selectedReferral.id, paid);
                 }}
@@ -536,6 +620,7 @@ function ReferralModal({
   onClose,
   onUpdated,
   onSetReward,
+  onSetAmount,
   onTogglePaid,
 }: {
   referral: Referral;
@@ -543,9 +628,13 @@ function ReferralModal({
   onClose: () => void;
   onUpdated: () => void;
   onSetReward: (rewardId: number | null) => void;
+  onSetAmount: (amount: number | null) => void;
   onTogglePaid: (paid: boolean) => void;
 }) {
   const [adminNote, setAdminNote] = useState(referral.admin_note);
+  const [amountInput, setAmountInput] = useState(
+    referral.monthly_amount ?? "",
+  );
   const [submitting, setSubmitting] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
@@ -622,55 +711,76 @@ function ReferralModal({
 
         <div className="space-y-3 px-6 py-5">
           <DetailRow label="Partner" value={partnerName} />
+          <label className="flex items-center justify-between gap-3 border-b border-gray-100 pb-2">
+            <span className="text-sm font-medium text-brand-gray-300">
+              Offer
+            </span>
+            <select
+              aria-label="Offer"
+              value={referral.reward_id ?? ""}
+              onChange={(e) => {
+                const val = e.target.value;
+                onSetReward(val === "" ? null : Number(val));
+              }}
+              className="w-[60%] cursor-pointer truncate rounded border border-brand-gray-100 bg-brand-gray-50 py-1 pl-2 pr-7 text-sm outline-none focus:border-purple-400"
+            >
+              <option value="">No offer</option>
+              {rewards.map((opt) => (
+                <option key={opt.id} value={opt.id}>
+                  {opt.description} (
+                  {opt.type === "yearly" ? "Yearly" : "Monthly"})
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="flex items-center justify-between gap-3 border-b border-gray-100 pb-2">
+            <span className="text-sm font-medium text-brand-gray-300">
+              Revenue (monthly)
+            </span>
+            <div className="relative w-[60%]">
+              <span className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 text-sm text-brand-gray-300">
+                $
+              </span>
+              <input
+                type="number"
+                inputMode="decimal"
+                step="0.01"
+                min="0"
+                value={amountInput}
+                onChange={(e) => {
+                  setAmountInput(e.target.value);
+                }}
+                onBlur={() => {
+                  const current = referral.monthly_amount ?? "";
+                  if (amountInput === current) return;
+                  if (amountInput === "") {
+                    onSetAmount(null);
+                  } else {
+                    const n = Number(amountInput);
+                    if (!Number.isNaN(n)) onSetAmount(n);
+                  }
+                }}
+                placeholder="0.00"
+                className="w-full rounded border border-brand-gray-100 bg-brand-gray-50 px-2 py-1 pl-5 text-right text-sm outline-none focus:border-purple-400"
+              />
+            </div>
+          </label>
           {referral.status === "closed_won" ? (
-            <>
-              <label className="flex items-center justify-between gap-3 border-b border-gray-100 pb-2">
-                <span className="text-sm font-medium text-brand-gray-300">
-                  Offer
-                </span>
-                <select
-                  aria-label="Offer"
-                  value={referral.reward_id ?? ""}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    onSetReward(val === "" ? null : Number(val));
-                  }}
-                  className="max-w-[60%] cursor-pointer rounded border border-brand-gray-100 bg-brand-gray-50 px-2 py-1 text-sm outline-none focus:border-purple-400"
-                >
-                  <option value="">No offer</option>
-                  {rewards.map((opt) => (
-                    <option key={opt.id} value={opt.id}>
-                      {opt.description} (
-                      {opt.type === "yearly" ? "Yearly" : "Monthly"})
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <div className="flex items-center justify-between gap-3 border-b border-gray-100 pb-2">
-                <span className="text-sm font-medium text-brand-gray-300">
-                  Payment
-                </span>
-                <button
-                  type="button"
-                  onClick={() => {
-                    onTogglePaid(!referral.paid_at);
-                  }}
-                  className={`cursor-pointer rounded px-3 py-1 text-xs font-medium ${referral.paid_at ? "border border-brand-gray-100 bg-transparent text-brand-gray-500 hover:bg-brand-gray-50" : "bg-purple-400 text-white hover:bg-purple-500"}`}
-                >
-                  {referral.paid_at ? "Mark Unpaid" : "Mark Paid"}
-                </button>
-              </div>
-            </>
-          ) : (
-            <DetailRow
-              label="Offer"
-              value={
-                referral.reward_description
-                  ? `${referral.reward_description} (${referral.reward_type === "yearly" ? "Yearly" : "Monthly"})`
-                  : ""
-              }
-            />
-          )}
+            <div className="flex items-center justify-between gap-3 border-b border-gray-100 pb-2">
+              <span className="text-sm font-medium text-brand-gray-300">
+                Payment
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  onTogglePaid(!referral.paid_at);
+                }}
+                className={`cursor-pointer rounded px-3 py-1 text-xs font-medium ${referral.paid_at ? "border border-brand-gray-100 bg-transparent text-brand-gray-500 hover:bg-brand-gray-50" : "bg-purple-400 text-white hover:bg-purple-500"}`}
+              >
+                {referral.paid_at ? "Mark Unpaid" : "Mark Paid"}
+              </button>
+            </div>
+          ) : null}
           <DetailRow
             label="Source"
             value={referral.source === "manual" ? "Manual" : "Link Click"}

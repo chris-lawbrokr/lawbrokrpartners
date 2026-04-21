@@ -11,7 +11,8 @@ export async function GET(request: NextRequest) {
   const sql = getDb();
   const rows = await sql`
     SELECT r.id, r.referral_code, r.source, r.lead_name, r.lead_email, r.lead_phone,
-           r.notes, r.status, r.admin_note, r.created_at, r.reviewed_at, r.paid_at,
+           r.notes, r.status, r.admin_note, r.monthly_amount, r.created_at,
+           r.reviewed_at, r.paid_at,
            u.first_name, u.last_name, u.email AS partner_email,
            rw.id AS reward_id, rw.description AS reward_description, rw.type AS reward_type
     FROM referrals r
