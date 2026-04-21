@@ -468,6 +468,15 @@ export default function AdminReferralsPage() {
                               {new Date(r.created_at).toLocaleDateString()}
                             </span>
                           </div>
+                          {col.key === "closed_won" ? (
+                            <p
+                              className={`mt-1 truncate text-xs ${r.reward_description ? "text-brand-gray-300" : "text-red-400"}`}
+                            >
+                              {r.reward_description
+                                ? `${r.reward_description} (${r.reward_type === "yearly" ? "Yearly" : "Monthly"})`
+                                : "No offer"}
+                            </p>
+                          ) : null}
                         </button>
                       </div>
                     ))
