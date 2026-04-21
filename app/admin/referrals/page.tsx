@@ -478,58 +478,50 @@ export default function AdminReferralsPage() {
                             onClick={() => {
                               setSelectedReferralId(r.id);
                             }}
-                            className="flex w-full cursor-pointer items-baseline gap-1 text-left"
+                            className="flex w-full cursor-pointer items-baseline justify-between gap-2 text-left"
                           >
-                            <span className="w-14 shrink-0 text-brand-gray-300">
-                              Created:
+                            <span className="shrink-0 text-brand-gray-300">
+                              Created
                             </span>
-                            <span className="text-brand-gray-400">
+                            <span className="truncate text-right text-brand-gray-400">
                               {new Date(r.created_at).toLocaleDateString()}
                             </span>
                           </button>
-                          <div className="flex w-full items-baseline gap-1">
-                            <span className="w-14 shrink-0 text-brand-gray-300">
-                              Offer:
-                            </span>
-                            <select
-                              aria-label="Offer"
-                              value={r.reward_id ?? ""}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                              }}
-                              onChange={(e) => {
-                                const val = e.target.value;
-                                void handleSetReward(
-                                  r.id,
-                                  val === "" ? null : Number(val),
-                                );
-                              }}
-                              className={`min-w-0 flex-1 cursor-pointer truncate rounded border border-brand-gray-100 bg-brand-gray-50/50 py-0.5 pl-1.5 pr-6 text-xs outline-none focus:border-purple-300 focus:outline-none focus:ring-0 ${r.reward_description ? "text-brand-gray-400" : "text-brand-gray-200"}`}
-                            >
-                              <option value="">No offer</option>
-                              {rewards.map((opt) => (
-                                <option key={opt.id} value={opt.id}>
-                                  {opt.description} (
-                                  {opt.type === "yearly"
-                                    ? "Yearly"
-                                    : "Monthly"}
-                                  )
-                                </option>
-                              ))}
-                            </select>
-                          </div>
+                          <select
+                            aria-label="Offer"
+                            value={r.reward_id ?? ""}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                            }}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              void handleSetReward(
+                                r.id,
+                                val === "" ? null : Number(val),
+                              );
+                            }}
+                            className={`w-full min-w-0 cursor-pointer truncate rounded border border-brand-gray-100 bg-brand-gray-50/50 py-0.5 pl-1.5 pr-6 text-xs outline-none focus:border-purple-300 focus:outline-none focus:ring-0 ${r.reward_description ? "text-brand-gray-400" : "text-brand-gray-200"}`}
+                          >
+                            <option value="">No offer</option>
+                            {rewards.map((opt) => (
+                              <option key={opt.id} value={opt.id}>
+                                {opt.description} (
+                                {opt.type === "yearly" ? "Yearly" : "Monthly"})
+                              </option>
+                            ))}
+                          </select>
                           <button
                             type="button"
                             onClick={() => {
                               setSelectedReferralId(r.id);
                             }}
-                            className="flex w-full cursor-pointer items-baseline gap-1 text-left"
+                            className="flex w-full cursor-pointer items-baseline justify-between gap-2 text-left"
                           >
-                            <span className="w-14 shrink-0 text-brand-gray-300">
-                              Revenue:
+                            <span className="shrink-0 text-brand-gray-300">
+                              Monthly revenue
                             </span>
                             <span
-                              className={`truncate ${r.monthly_amount ? "text-brand-gray-400" : "text-brand-gray-200"}`}
+                              className={`truncate text-right ${r.monthly_amount ? "text-brand-gray-400" : "text-brand-gray-200"}`}
                             >
                               {r.monthly_amount
                                 ? `$${Number(r.monthly_amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}/mo`
@@ -543,12 +535,12 @@ export default function AdminReferralsPage() {
                               onClick={() => {
                                 setSelectedReferralId(r.id);
                               }}
-                              className="flex w-full cursor-pointer items-baseline gap-1 text-left"
+                              className="flex w-full cursor-pointer items-baseline justify-between gap-2 text-left"
                             >
-                              <span className="w-14 shrink-0 text-brand-gray-300">
-                                Closed:
+                              <span className="shrink-0 text-brand-gray-300">
+                                Closed
                               </span>
-                              <span className="text-brand-gray-400">
+                              <span className="truncate text-right text-brand-gray-400">
                                 {r.reviewed_at
                                   ? new Date(
                                       r.reviewed_at,
@@ -735,7 +727,7 @@ function ReferralModal({
           </label>
           <label className="flex items-center justify-between gap-3 border-b border-gray-100 pb-2">
             <span className="text-sm font-medium text-brand-gray-300">
-              Revenue (monthly)
+              Monthly revenue
             </span>
             <div className="relative w-[60%]">
               <span className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 text-sm text-brand-gray-300">
