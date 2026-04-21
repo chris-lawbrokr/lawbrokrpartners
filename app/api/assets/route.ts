@@ -33,8 +33,10 @@ export async function POST(request: NextRequest) {
 
   if (isMultipart) {
     const form = await request.formData();
-    title = String(form.get("title") ?? "").trim();
-    category = String(form.get("category") ?? "").trim();
+    const rawTitle = form.get("title");
+    const rawCategory = form.get("category");
+    title = typeof rawTitle === "string" ? rawTitle.trim() : "";
+    category = typeof rawCategory === "string" ? rawCategory.trim() : "";
     const f = form.get("file");
     if (f instanceof File) file = f;
   } else {

@@ -35,7 +35,7 @@ export async function PATCH(
     !rewardProvided &&
     !paidProvided;
 
-  if (statusProvided && !validStatuses.includes(body.status!)) {
+  if (body.status !== undefined && !validStatuses.includes(body.status)) {
     return NextResponse.json(
       {
         message:
@@ -59,11 +59,11 @@ export async function PATCH(
     return NextResponse.json({ message: "Referral not found" }, { status: 404 });
   }
 
-  if (statusProvided) {
+  if (body.status !== undefined) {
     // Status change clears any attached offer and paid flag
     await sql`
       UPDATE referrals SET
-        status = ${body.status!},
+        status = ${body.status},
         admin_note = ${body.adminNote ?? ""},
         reward_id = NULL,
         paid_at = NULL,
@@ -82,9 +82,9 @@ export async function PATCH(
     } else {
       await sql`UPDATE referrals SET paid_at = NULL WHERE id = ${id}`;
     }
-  } else if (adminNoteOnly) {
+  } else if (body.adminNote !== undefined) {
     await sql`
-      UPDATE referrals SET admin_note = ${body.adminNote!} WHERE id = ${id}
+      UPDATE referrals SET admin_note = ${body.adminNote} WHERE id = ${id}
     `;
   }
 
