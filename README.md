@@ -154,5 +154,4 @@ x - change referral flow - ( lead submitted, demo booked, closed won, closed los
 x - remove offer from partners lead input
 x - only set offer once payed
 x - allow admin to accept partner
-
-assets tab [ https://lawbrokr.firstpromoter.com/marketing-assets ]
+x - assets tab [ https://lawbrokr.firstpromoter.com/marketing-assets ]
