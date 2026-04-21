@@ -3,18 +3,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth";
 import { apiFetch } from "@/lib/api";
-import { AssetCard, ASSET_TABS } from "@/app/admin/assets/page";
 import PageSpinner from "@/components/page-spinner";
-
-interface Asset {
-  id: number;
-  title: string;
-  category: string;
-  mime_type: string;
-  file_name: string;
-  file_size: number;
-  created_at: string;
-}
+import { AssetCard, ASSET_TABS, type Asset } from "@/components/asset";
 
 export default function PartnerAssetsPage() {
   const { user } = useAuth();
