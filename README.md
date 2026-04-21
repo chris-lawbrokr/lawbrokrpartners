@@ -146,12 +146,3 @@ rm -rf .next && npm run dev
 ```
 npm run db:seed
 ```
-
-### TODO
-
-x - add alert banner if payout method has not been added
-x - change referral flow - ( lead submitted, demo booked, closed won, closed lost )
-x - remove offer from partners lead input
-x - only set offer once payed
-x - allow admin to accept partner
-x - assets tab [ https://lawbrokr.firstpromoter.com/marketing-assets ]
