@@ -10,6 +10,7 @@ import {
   Link as LinkIcon,
   FolderOpen,
   LogOut,
+  UserCircle,
 } from "lucide-react";
 
 interface NavItem {
@@ -35,6 +36,8 @@ export function Sidebar({ variant }: { variant: "admin" | "partner" }) {
   const pathname = usePathname();
   const { user, logout } = useAuth();
   const items = variant === "admin" ? adminNav : partnerNav;
+  const profileHref = variant === "admin" ? "/admin/profile" : "/dashboard/profile";
+  const profileActive = pathname === profileHref;
 
   return (
     <aside className="flex h-screen w-56 shrink-0 flex-col border-r border-gray-200 bg-white">
@@ -43,12 +46,22 @@ export function Sidebar({ variant }: { variant: "admin" | "partner" }) {
         <img src="/Logo.svg" alt="LawBrokr" className="h-6" />
       </div>
 
-      {/* User */}
+      {/* Profile link (shows user name) */}
       {user ? (
-        <div className="px-5 pb-3">
-          <p className="truncate text-sm font-medium text-brand-gray-600">
-            {user.firstName} {user.lastName}
-          </p>
+        <div className="px-3 pb-2">
+          <Link
+            href={profileHref}
+            className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+              profileActive
+                ? "bg-purple-50 text-purple-700"
+                : "text-brand-gray-600 hover:bg-brand-gray-50"
+            }`}
+          >
+            <UserCircle className="h-4 w-4 shrink-0" />
+            <span className="truncate">
+              {`${user.firstName} ${user.lastName}`.trim() || user.email}
+            </span>
+          </Link>
         </div>
       ) : null}
 

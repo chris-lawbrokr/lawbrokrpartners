@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useState } from "react";
 import { useAuth } from "@/lib/auth";
 
@@ -25,14 +26,23 @@ export default function LoginPage() {
   };
 
   return (
-    <main className="flex min-h-screen items-center justify-center">
+    <main className="flex min-h-screen items-center justify-center p-4">
       <form
-        onSubmit={(e) => { void handleSubmit(e); }}
+        onSubmit={(e) => {
+          void handleSubmit(e);
+        }}
         className="flex w-full max-w-[400px] flex-col gap-4 p-8"
       >
-        <h1 className="mb-4 text-center text-2xl font-bold">
-          LawBrokr Partners
-        </h1>
+        <div className="mb-2 flex justify-center">
+          <Image
+            src="/Logo.svg"
+            alt="LawBrokr"
+            width={117}
+            height={30}
+            priority
+            className="h-8 w-auto"
+          />
+        </div>
 
         {error ? (
           <div className="rounded bg-red-100 p-3 text-sm text-red-600">
@@ -45,7 +55,9 @@ export default function LoginPage() {
           <input
             type="email"
             value={email}
-            onChange={(e) => { setEmail(e.target.value); }}
+            onChange={(e) => {
+              setEmail(e.target.value);
+            }}
             required
             className="rounded border border-brand-gray-100 bg-brand-gray-50 px-3 py-2 text-base outline-none focus:border-purple-400"
           />
@@ -56,7 +68,9 @@ export default function LoginPage() {
           <input
             type="password"
             value={password}
-            onChange={(e) => { setPassword(e.target.value); }}
+            onChange={(e) => {
+              setPassword(e.target.value);
+            }}
             required
             className="rounded border border-brand-gray-100 bg-brand-gray-50 px-3 py-2 text-base outline-none focus:border-purple-400"
           />
@@ -65,7 +79,7 @@ export default function LoginPage() {
         <button
           type="submit"
           disabled={loading}
-          className="cursor-pointer rounded bg-brand-gray-600 py-3 text-base font-semibold text-white disabled:cursor-not-allowed disabled:opacity-70"
+          className="cursor-pointer rounded bg-purple-400 py-3 text-base font-semibold text-white hover:bg-purple-500 disabled:cursor-not-allowed disabled:opacity-70"
         >
           {loading ? "Signing in..." : "Sign in"}
         </button>

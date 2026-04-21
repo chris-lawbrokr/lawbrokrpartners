@@ -1,14 +1,15 @@
 @import "tailwindcss";
 
 @theme {
-  /* Purple - Row 1 */
-  --color-purple-50: #f2effd;
-  --color-purple-100: #d4c8f7;
-  --color-purple-200: #b29af1;
-  --color-purple-300: #936ae9;
-  --color-purple-400: #7634d9;
-  --color-purple-500: #4d2092;
-  --color-purple-600: #280d51;
+  /* Purple — brand (400) = #250D53 */
+  --color-purple-50: #f2effa;
+  --color-purple-100: #d7cde9;
+  --color-purple-200: #b4a2d1;
+  --color-purple-300: #806aae;
+  --color-purple-400: #250d53;
+  --color-purple-500: #1a0940;
+  --color-purple-600: #11062c;
+  --color-purple-700: #080318;
 
   /* Violet - Row 2 */
   --color-violet-50: #efebfc;
