@@ -279,7 +279,7 @@ export default function AdminReferralsPage() {
             onClick={() => {
               setFiltersOpen((v) => !v);
             }}
-            className="flex cursor-pointer items-center gap-1.5 rounded border border-brand-gray-100 bg-brand-gray-50 px-3 py-2 text-sm hover:border-purple-400"
+            className="flex cursor-pointer items-center gap-1.5 rounded border border-brand-gray-100 bg-brand-gray-50 px-3 py-2 text-sm hover:bg-brand-gray-100"
           >
             <SlidersHorizontal className="h-4 w-4" />
             Filters
@@ -458,6 +458,15 @@ export default function AdminReferralsPage() {
                               </span>
                             )}
                           </p>
+                          {col.key === "closed_won" ? (
+                            <p
+                              className={`mt-1 truncate text-xs ${r.reward_description ? "text-brand-gray-300" : "text-red-400"}`}
+                            >
+                              {r.reward_description
+                                ? `${r.reward_description} (${r.reward_type === "yearly" ? "Yearly" : "Monthly"})`
+                                : "No offer"}
+                            </p>
+                          ) : null}
                           <div className="mt-2 flex items-center justify-between">
                             <span
                               className={`text-xs font-medium ${r.source === "manual" ? "text-purple-500" : "text-brand-gray-300"}`}
@@ -468,15 +477,6 @@ export default function AdminReferralsPage() {
                               {new Date(r.created_at).toLocaleDateString()}
                             </span>
                           </div>
-                          {col.key === "closed_won" ? (
-                            <p
-                              className={`mt-1 truncate text-xs ${r.reward_description ? "text-brand-gray-300" : "text-red-400"}`}
-                            >
-                              {r.reward_description
-                                ? `${r.reward_description} (${r.reward_type === "yearly" ? "Yearly" : "Monthly"})`
-                                : "No offer"}
-                            </p>
-                          ) : null}
                         </button>
                       </div>
                     ))
@@ -548,10 +548,12 @@ function ReferralModal({
 }) {
   const [adminNote, setAdminNote] = useState(referral.admin_note);
   const [submitting, setSubmitting] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   const isTerminal =
     referral.status === "closed_won" || referral.status === "closed_lost";
   const canReview = !isTerminal;
+  const noteDirty = adminNote !== referral.admin_note;
 
   const handleReview = async (
     status: "demo_booked" | "closed_won" | "closed_lost",
@@ -561,6 +563,19 @@ function ReferralModal({
       await apiFetch(`/api/referrals/${String(referral.id)}`, {
         method: "PATCH",
         body: JSON.stringify({ status, adminNote }),
+      });
+      onUpdated();
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleSaveNote = async () => {
+    setSubmitting(true);
+    try {
+      await apiFetch(`/api/referrals/${String(referral.id)}`, {
+        method: "PATCH",
+        body: JSON.stringify({ adminNote }),
       });
       onUpdated();
     } finally {
@@ -690,74 +705,101 @@ function ReferralModal({
               value={new Date(referral.reviewed_at).toLocaleDateString()}
             />
           ) : null}
-          {referral.admin_note && !canReview ? (
-            <DetailRow label="Admin Note" value={referral.admin_note} />
-          ) : null}
-
-          {canReview ? (
-            <div className="pt-1">
-              <label className="flex flex-col gap-1 text-sm font-medium">
-                Admin Note
-                <input
-                  type="text"
-                  value={adminNote}
-                  onChange={(e) => {
-                    setAdminNote(e.target.value);
-                  }}
-                  placeholder="Optional note"
-                  className="w-full rounded border border-brand-gray-100 bg-brand-gray-50 px-3 py-2 text-sm outline-none focus:border-purple-400"
-                />
-              </label>
-            </div>
-          ) : null}
+          <div className="pt-1">
+            <label className="flex flex-col gap-1 text-sm font-medium">
+              Admin Note
+              <input
+                type="text"
+                value={adminNote}
+                onChange={(e) => {
+                  setAdminNote(e.target.value);
+                }}
+                placeholder="Optional note"
+                className="w-full rounded border border-brand-gray-100 bg-brand-gray-50 px-3 py-2 text-sm outline-none focus:border-purple-400"
+              />
+            </label>
+          </div>
         </div>
 
         <div className="flex flex-col gap-2 border-t border-gray-200 px-6 py-4">
-          {canReview ? (
-            <>
-              {referral.status !== "demo_booked" ? (
-                <button
-                  type="button"
-                  disabled={submitting}
-                  onClick={() => {
-                    void handleReview("demo_booked");
-                  }}
-                  className="w-full cursor-pointer rounded bg-purple-400 py-2.5 text-sm font-medium text-white disabled:opacity-70"
-                >
-                  Mark Demo Booked
-                </button>
-              ) : null}
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  disabled={submitting}
-                  onClick={() => {
-                    void handleReview("closed_won");
-                  }}
-                  className="flex-1 cursor-pointer rounded bg-purple-600 py-2.5 text-sm font-medium text-white disabled:opacity-70"
-                >
-                  Mark Closed Won
-                </button>
-                <button
-                  type="button"
-                  disabled={submitting}
-                  onClick={() => {
-                    void handleReview("closed_lost");
-                  }}
-                  className="flex-1 cursor-pointer rounded bg-purple-200 py-2.5 text-sm font-medium text-purple-600 disabled:opacity-70"
-                >
-                  Mark Closed Lost
-                </button>
-              </div>
-            </>
-          ) : (
+          {referral.status === "submitted" ? (
             <button
               type="button"
               disabled={submitting}
               onClick={() => {
-                void handleDelete();
+                void handleReview("demo_booked");
               }}
-              className="w-full cursor-pointer rounded bg-purple-200 py-2.5 text-sm font-medium text-purple-600 disabled:opacity-70"
+              className="w-full cursor-pointer rounded bg-purple-400 py-2.5 text-sm font-medium text-white disabled:opacity-70"
+            >
+              Mark Demo Booked
+            </button>
+          ) : referral.status === "demo_booked" ? (
+            <div className="flex gap-2">
+              <button
+                type="button"
+                disabled={submitting}
+                onClick={() => {
+                  void handleReview("closed_won");
+                }}
+                className="flex-1 cursor-pointer rounded bg-purple-400 py-2.5 text-sm font-medium text-white disabled:opacity-70"
+              >
+                Mark Closed Won
+              </button>
+              <button
+                type="button"
+                disabled={submitting}
+                onClick={() => {
+                  void handleReview("closed_lost");
+                }}
+                className="flex-1 cursor-pointer rounded bg-purple-900 py-2.5 text-sm font-medium text-white disabled:opacity-70"
+              >
+                Mark Closed Lost
+              </button>
+            </div>
+          ) : null}
+          <button
+            type="button"
+            disabled={submitting}
+            onClick={() => {
+              if (noteDirty) {
+                void handleSaveNote();
+              } else {
+                onClose();
+              }
+            }}
+            className="w-full cursor-pointer rounded border border-brand-gray-100 bg-brand-gray-50 py-2.5 text-sm font-medium hover:bg-brand-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {submitting && noteDirty ? "Saving..." : "Save"}
+          </button>
+          {confirmDelete ? (
+            <div className="flex gap-2">
+              <button
+                type="button"
+                disabled={submitting}
+                onClick={() => {
+                  void handleDelete();
+                }}
+                className="flex-1 cursor-pointer rounded bg-red-600 py-2.5 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-70"
+              >
+                {submitting ? "Deleting..." : "Confirm Delete"}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setConfirmDelete(false);
+                }}
+                className="cursor-pointer rounded border border-brand-gray-100 bg-transparent px-4 py-2.5 text-sm text-brand-gray-500"
+              >
+                Cancel
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => {
+                setConfirmDelete(true);
+              }}
+              className="w-full cursor-pointer rounded bg-red-600 py-2.5 text-sm font-medium text-white hover:bg-red-700"
             >
               Delete
             </button>

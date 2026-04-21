@@ -17,6 +17,16 @@ interface MyReferral {
   admin_note: string;
   created_at: string;
   reviewed_at: string | null;
+  paid_at: string | null;
+  reward_id: number | null;
+  reward_description: string | null;
+  reward_type: string | null;
+}
+
+interface RewardOption {
+  id: number;
+  description: string;
+  type: string;
 }
 
 const columns = [
@@ -41,10 +51,15 @@ export default function PartnerReferralsPage() {
   const [selectedReferral, setSelectedReferral] = useState<MyReferral | null>(
     null,
   );
+  const [rewards, setRewards] = useState<RewardOption[]>([]);
   const [search, setSearch] = useState("");
   const [dateFilter, setDateFilter] = useState<
     "all" | "today" | "7d" | "30d"
   >("all");
+  const [offerFilter, setOfferFilter] = useState<string>("all");
+  const [paidFilter, setPaidFilter] = useState<"all" | "paid" | "unpaid">(
+    "all",
+  );
   const [filtersOpen, setFiltersOpen] = useState(false);
   const filtersRef = useRef<HTMLDivElement>(null);
 
@@ -64,20 +79,31 @@ export default function PartnerReferralsPage() {
     };
   }, [filtersOpen]);
 
-  const activeFilterCount = dateFilter !== "all" ? 1 : 0;
+  const activeFilterCount =
+    (dateFilter !== "all" ? 1 : 0) +
+    (offerFilter !== "all" ? 1 : 0) +
+    (paidFilter !== "all" ? 1 : 0);
 
   const resetFilters = () => {
     setDateFilter("all");
+    setOfferFilter("all");
+    setPaidFilter("all");
   };
 
   const loadData = useCallback(async () => {
-    const res = await apiFetch("/api/partner/referrals");
-    if (res.ok) {
-      const data = (await res.json()) as {
+    const [referralsRes, rewardsRes] = await Promise.all([
+      apiFetch("/api/partner/referrals"),
+      apiFetch("/api/rewards"),
+    ]);
+    if (referralsRes.ok) {
+      const data = (await referralsRes.json()) as {
         referrals: MyReferral[];
         stats: unknown;
       };
       setReferrals(data.referrals);
+    }
+    if (rewardsRes.ok) {
+      setRewards((await rewardsRes.json()) as RewardOption[]);
     }
     setLoading(false);
   }, []);
@@ -110,6 +136,17 @@ export default function PartnerReferralsPage() {
     }
     if (dateCutoff !== null && new Date(r.created_at).getTime() < dateCutoff) {
       return false;
+    }
+    if (offerFilter !== "all") {
+      if (offerFilter === "none") {
+        if (r.reward_id !== null) return false;
+      } else if (String(r.reward_id ?? "") !== offerFilter) {
+        return false;
+      }
+    }
+    if (paidFilter === "paid" && !r.paid_at) return false;
+    if (paidFilter === "unpaid") {
+      if (r.status !== "closed_won" || r.paid_at) return false;
     }
     return true;
   });
@@ -172,6 +209,43 @@ export default function PartnerReferralsPage() {
                     <option value="today">Today</option>
                     <option value="7d">Last 7 days</option>
                     <option value="30d">Last 30 days</option>
+                  </select>
+                </label>
+                <label className="flex flex-col gap-1 text-sm">
+                  <span className="text-xs font-medium text-brand-gray-400">
+                    Offer
+                  </span>
+                  <select
+                    value={offerFilter}
+                    onChange={(e) => {
+                      setOfferFilter(e.target.value);
+                    }}
+                    className="w-full cursor-pointer rounded border border-brand-gray-100 bg-brand-gray-50 px-3 py-2 outline-none focus:border-purple-400"
+                  >
+                    <option value="all">All offers</option>
+                    <option value="none">No offer</option>
+                    {rewards.map((r) => (
+                      <option key={r.id} value={r.id}>
+                        {r.description} (
+                        {r.type === "yearly" ? "Yearly" : "Monthly"})
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="flex flex-col gap-1 text-sm">
+                  <span className="text-xs font-medium text-brand-gray-400">
+                    Paid status
+                  </span>
+                  <select
+                    value={paidFilter}
+                    onChange={(e) => {
+                      setPaidFilter(e.target.value as typeof paidFilter);
+                    }}
+                    className="w-full cursor-pointer rounded border border-brand-gray-100 bg-brand-gray-50 px-3 py-2 outline-none focus:border-purple-400"
+                  >
+                    <option value="all">All</option>
+                    <option value="paid">Paid</option>
+                    <option value="unpaid">Unpaid (Closed Won)</option>
                   </select>
                 </label>
                 <div className="flex items-center justify-between border-t border-gray-100 pt-3">

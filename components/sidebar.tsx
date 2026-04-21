@@ -8,6 +8,7 @@ import {
   LayoutDashboard,
   Users,
   Link as LinkIcon,
+  FolderOpen,
   LogOut,
 } from "lucide-react";
 
@@ -21,11 +22,13 @@ const adminNav: NavItem[] = [
   { label: "Dashboard", href: "/admin", icon: <LayoutDashboard className="h-4 w-4" /> },
   { label: "Partners", href: "/admin/partners", icon: <Users className="h-4 w-4" /> },
   { label: "Referrals", href: "/admin/referrals", icon: <LinkIcon className="h-4 w-4" /> },
+  { label: "Assets", href: "/admin/assets", icon: <FolderOpen className="h-4 w-4" /> },
 ];
 
 const partnerNav: NavItem[] = [
   { label: "Dashboard", href: "/dashboard", icon: <LayoutDashboard className="h-4 w-4" /> },
   { label: "Referrals", href: "/dashboard/referrals", icon: <LinkIcon className="h-4 w-4" /> },
+  { label: "Assets", href: "/dashboard/assets", icon: <FolderOpen className="h-4 w-4" /> },
 ];
 
 export function Sidebar({ variant }: { variant: "admin" | "partner" }) {

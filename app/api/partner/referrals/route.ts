@@ -10,10 +10,13 @@ export async function GET(request: NextRequest) {
 
   const sql = getDb();
   const rows = await sql`
-    SELECT id, referral_code, source, lead_name, lead_email, lead_phone, notes, status, admin_note, created_at, reviewed_at
-    FROM referrals
-    WHERE partner_id = ${auth.userId}
-    ORDER BY created_at DESC
+    SELECT r.id, r.referral_code, r.source, r.lead_name, r.lead_email, r.lead_phone,
+           r.notes, r.status, r.admin_note, r.created_at, r.reviewed_at, r.paid_at,
+           rw.id AS reward_id, rw.description AS reward_description, rw.type AS reward_type
+    FROM referrals r
+    LEFT JOIN rewards rw ON rw.id = r.reward_id
+    WHERE r.partner_id = ${auth.userId}
+    ORDER BY r.created_at DESC
   `;
 
   const countRows = await sql`

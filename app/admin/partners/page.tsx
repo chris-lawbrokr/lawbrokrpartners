@@ -438,7 +438,7 @@ function UserDetailModal({
                 onClick={() => {
                   void handleApprove();
                 }}
-                className="mb-2 w-full cursor-pointer rounded bg-purple-600 py-3 text-sm font-medium text-white disabled:opacity-70"
+                className="mb-2 w-full cursor-pointer rounded bg-purple-200 py-3 text-sm font-medium text-purple-600 disabled:opacity-70"
               >
                 {submitting ? "Approving..." : "Approve Partner"}
               </button>

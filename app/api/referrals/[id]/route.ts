@@ -29,6 +29,11 @@ export async function PATCH(
   const statusProvided = body.status !== undefined;
   const rewardProvided = "rewardId" in body;
   const paidProvided = body.paid !== undefined;
+  const adminNoteOnly =
+    body.adminNote !== undefined &&
+    !statusProvided &&
+    !rewardProvided &&
+    !paidProvided;
 
   if (statusProvided && !validStatuses.includes(body.status!)) {
     return NextResponse.json(
@@ -40,7 +45,7 @@ export async function PATCH(
     );
   }
 
-  if (!statusProvided && !rewardProvided && !paidProvided) {
+  if (!statusProvided && !rewardProvided && !paidProvided && !adminNoteOnly) {
     return NextResponse.json(
       { message: "No update fields provided" },
       { status: 400 },
@@ -77,6 +82,10 @@ export async function PATCH(
     } else {
       await sql`UPDATE referrals SET paid_at = NULL WHERE id = ${id}`;
     }
+  } else if (adminNoteOnly) {
+    await sql`
+      UPDATE referrals SET admin_note = ${body.adminNote!} WHERE id = ${id}
+    `;
   }
 
   return NextResponse.json({ ok: true });
