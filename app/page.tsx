@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth";
+import PageSpinner from "@/components/page-spinner";
 
 export default function Home() {
   const { user } = useAuth();
@@ -14,9 +15,5 @@ export default function Home() {
     }
   }, [user, router]);
 
-  return (
-    <div className="flex min-h-screen items-center justify-center">
-      <div className="h-8 w-8 animate-spin rounded-full border-4 border-purple-200 border-t-purple-500" />
-    </div>
-  );
+  return <PageSpinner />;
 }

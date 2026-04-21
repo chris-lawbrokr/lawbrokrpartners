@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import SignupForm from "./signup-form";
+import PageSpinner from "@/components/page-spinner";
 
 interface InviteInfo {
   firstName: string;
@@ -76,11 +77,7 @@ export default function InvitePage() {
   }
 
   if (!loaded || !inviteInfo) {
-    return (
-      <div className="flex h-screen w-screen items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-purple-200 border-t-purple-500" />
-      </div>
-    );
+    return <PageSpinner />;
   }
 
   return (

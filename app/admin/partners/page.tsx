@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth";
 import { apiFetch } from "@/lib/api";
+import PageSpinner from "@/components/page-spinner";
 
 interface PartnerUser {
   id: number;
@@ -79,6 +80,17 @@ export default function PartnersPage() {
     );
   }
 
+  if (loading || !user) {
+    return (
+      <main className="mx-auto max-w-[1100px] p-8">
+        <div className="mb-4 flex items-center justify-between">
+          <h1 className="text-2xl font-bold">Partners</h1>
+        </div>
+        <PageSpinner />
+      </main>
+    );
+  }
+
   return (
     <main className="mx-auto max-w-[1100px] p-8">
       <div className="mb-4 flex items-center justify-between">
@@ -108,13 +120,7 @@ export default function PartnersPage() {
             </tr>
           </thead>
           <tbody>
-            {loading || !user ? (
-              <tr>
-                <td colSpan={7} className="py-8 text-center">
-                  <div className="inline-block h-6 w-6 animate-spin rounded-full border-4 border-purple-200 border-t-purple-500" />
-                </td>
-              </tr>
-            ) : users.length === 0 ? (
+            {users.length === 0 ? (
               <tr>
                 <td
                   colSpan={7}

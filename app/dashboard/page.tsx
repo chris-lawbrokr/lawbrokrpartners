@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { apiFetch } from "@/lib/api";
+import PageSpinner from "@/components/page-spinner";
 
 function formatPhone(value: string): string {
   const digits = value.replace(/\D/g, "").slice(0, 10);
@@ -125,6 +126,15 @@ export default function PartnerDashboard() {
     );
   }
 
+  if (loading || !user) {
+    return (
+      <main className="mx-auto max-w-[900px] p-8">
+        <h1 className="mb-6 text-2xl font-bold">Dashboard</h1>
+        <PageSpinner />
+      </main>
+    );
+  }
+
   return (
     <main className="mx-auto max-w-[900px] p-8">
       <h1 className="mb-6 text-2xl font-bold">Dashboard</h1>
@@ -222,13 +232,7 @@ export default function PartnerDashboard() {
             </tr>
           </thead>
           <tbody>
-            {loading || !user ? (
-              <tr>
-                <td colSpan={5} className="py-8 text-center">
-                  <div className="inline-block h-6 w-6 animate-spin rounded-full border-4 border-purple-200 border-t-purple-500" />
-                </td>
-              </tr>
-            ) : referrals.length === 0 ? (
+            {referrals.length === 0 ? (
               <tr>
                 <td
                   colSpan={5}

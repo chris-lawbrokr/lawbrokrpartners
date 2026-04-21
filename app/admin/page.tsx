@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { apiFetch } from "@/lib/api";
+import PageSpinner from "@/components/page-spinner";
 
 const Chart = dynamic(() => import("react-apexcharts"), { ssr: false });
 
@@ -84,6 +85,15 @@ export default function Home() {
     if (user) void loadData();
   }, [user, loadData]);
 
+  if (loading) {
+    return (
+      <main className="mx-auto max-w-[1200px] p-8">
+        <h1 className="mb-8 text-2xl font-bold">Dashboard</h1>
+        <PageSpinner />
+      </main>
+    );
+  }
+
   // Build 30-day date range for chart
   const chartDates: string[] = [];
   const chartCounts: number[] = [];
@@ -99,12 +109,6 @@ export default function Home() {
     chartCounts.push(match?.count ?? 0);
   }
 
-  const Spinner = () => (
-    <div className="flex justify-center py-4">
-      <div className="h-5 w-5 animate-spin rounded-full border-2 border-purple-200 border-t-purple-500" />
-    </div>
-  );
-
   return (
     <main className="mx-auto max-w-[1200px] p-8">
       <h1 className="mb-8 text-2xl font-bold">Dashboard</h1>
@@ -115,25 +119,25 @@ export default function Home() {
           icon={<DollarSign className="h-5 w-5 text-purple-600" />}
           iconBg="bg-purple-100"
           label="Revenue generated"
-          value={loading ? null : `$${stats.revenue.toLocaleString()}`}
+          value={`$${stats.revenue.toLocaleString()}`}
         />
         <StatCard
           icon={<LinkIcon className="h-5 w-5 text-purple-600" />}
           iconBg="bg-purple-100"
           label="Referrals"
-          value={loading ? null : String(stats.referrals)}
+          value={String(stats.referrals)}
         />
         <StatCard
           icon={<UserCheck className="h-5 w-5 text-purple-600" />}
           iconBg="bg-purple-100"
           label="Paying customers"
-          value={loading ? null : String(stats.payingCustomers)}
+          value={String(stats.payingCustomers)}
         />
         <StatCard
           icon={<Users className="h-5 w-5 text-purple-600" />}
           iconBg="bg-purple-100"
           label="Promoters"
-          value={loading ? null : String(stats.promoters)}
+          value={String(stats.promoters)}
         />
       </div>
 
@@ -147,59 +151,53 @@ export default function Home() {
               Last 30 Days
             </span>
           </div>
-          {loading ? (
-            <div className="flex justify-center py-10">
-              <div className="h-5 w-5 animate-spin rounded-full border-2 border-purple-200 border-t-purple-500" />
-            </div>
-          ) : (
-            <div className="-mx-2 flex w-full flex-1 flex-col justify-center">
-              <Chart
-                type="area"
-                width="100%"
-                height={250}
-                series={[{ name: "Referrals", data: chartCounts }]}
-                options={{
-                  chart: {
-                    toolbar: { show: false },
-                    sparkline: { enabled: false },
-                    fontFamily: "inherit",
+          <div className="-mx-2 flex w-full flex-1 flex-col justify-center">
+            <Chart
+              type="area"
+              width="100%"
+              height={250}
+              series={[{ name: "Referrals", data: chartCounts }]}
+              options={{
+                chart: {
+                  toolbar: { show: false },
+                  sparkline: { enabled: false },
+                  fontFamily: "inherit",
+                },
+                stroke: { curve: "smooth", width: 2 },
+                colors: ["#7634d9"],
+                fill: {
+                  type: "gradient",
+                  gradient: {
+                    shadeIntensity: 1,
+                    opacityFrom: 0.4,
+                    opacityTo: 0.05,
+                    stops: [0, 100],
                   },
-                  stroke: { curve: "smooth", width: 2 },
-                  colors: ["#7634d9"],
-                  fill: {
-                    type: "gradient",
-                    gradient: {
-                      shadeIntensity: 1,
-                      opacityFrom: 0.4,
-                      opacityTo: 0.05,
-                      stops: [0, 100],
-                    },
+                },
+                xaxis: {
+                  categories: chartDates,
+                  labels: {
+                    style: { fontSize: "10px", colors: "#a8a7ad" },
+                    rotate: 0,
+                    hideOverlappingLabels: true,
                   },
-                  xaxis: {
-                    categories: chartDates,
-                    labels: {
-                      style: { fontSize: "10px", colors: "#a8a7ad" },
-                      rotate: 0,
-                      hideOverlappingLabels: true,
-                    },
-                    axisBorder: { show: false },
-                    axisTicks: { show: false },
+                  axisBorder: { show: false },
+                  axisTicks: { show: false },
+                },
+                yaxis: {
+                  labels: {
+                    style: { fontSize: "10px", colors: "#a8a7ad" },
                   },
-                  yaxis: {
-                    labels: {
-                      style: { fontSize: "10px", colors: "#a8a7ad" },
-                    },
-                  },
-                  grid: {
-                    borderColor: "#f1f0f1",
-                    strokeDashArray: 4,
-                  },
-                  dataLabels: { enabled: false },
-                  tooltip: { theme: "light" },
-                }}
-              />
-            </div>
-          )}
+                },
+                grid: {
+                  borderColor: "#f1f0f1",
+                  strokeDashArray: 4,
+                },
+                dataLabels: { enabled: false },
+                tooltip: { theme: "light" },
+              }}
+            />
+          </div>
         </div>
 
         {/* Right sidebar */}
@@ -210,9 +208,7 @@ export default function Home() {
               <h2 className="text-base font-semibold">Top Promoters</h2>
               <span className="text-xs text-brand-gray-300">Last 30 days</span>
             </div>
-            {loading ? (
-              <Spinner />
-            ) : stats.topPromoters.length === 0 ? (
+            {stats.topPromoters.length === 0 ? (
               <p className="text-sm text-brand-gray-200">No promoters yet.</p>
             ) : (
               <div className="space-y-3">
@@ -236,76 +232,70 @@ export default function Home() {
               <h2 className="text-base font-semibold">Commissions</h2>
               <span className="text-xs text-brand-gray-300">All time</span>
             </div>
-            {loading ? (
-              <Spinner />
-            ) : (
-              <>
-                <Chart
-                  type="donut"
-                  height={200}
-                  series={[0, 0]}
-                  options={{
-                    chart: { fontFamily: "inherit" },
-                    labels: ["Paid", "Unpaid"],
-                    colors: ["#b29af1", "#7634d9"],
-                    plotOptions: {
-                      pie: {
-                        donut: {
-                          size: "70%",
-                          labels: {
-                            show: true,
-                            name: {
-                              show: true,
-                              fontSize: "12px",
-                              color: "#83818a",
-                            },
-                            value: {
-                              show: true,
-                              fontSize: "20px",
-                              fontWeight: "700",
-                              formatter: () => "$0",
-                            },
-                            total: {
-                              show: true,
-                              label: "Total earned",
-                              fontSize: "12px",
-                              color: "#83818a",
-                              formatter: () => "$0",
-                            },
-                          },
+            <Chart
+              type="donut"
+              height={200}
+              series={[0, 0]}
+              options={{
+                chart: { fontFamily: "inherit" },
+                labels: ["Paid", "Unpaid"],
+                colors: ["#b29af1", "#7634d9"],
+                plotOptions: {
+                  pie: {
+                    donut: {
+                      size: "70%",
+                      labels: {
+                        show: true,
+                        name: {
+                          show: true,
+                          fontSize: "12px",
+                          color: "#83818a",
+                        },
+                        value: {
+                          show: true,
+                          fontSize: "20px",
+                          fontWeight: "700",
+                          formatter: () => "$0",
+                        },
+                        total: {
+                          show: true,
+                          label: "Total earned",
+                          fontSize: "12px",
+                          color: "#83818a",
+                          formatter: () => "$0",
                         },
                       },
                     },
-                    dataLabels: { enabled: false },
-                    legend: { show: false },
-                    stroke: { width: 0 },
-                  }}
-                />
-                <div className="mt-2 space-y-1.5">
-                  <div className="flex items-center justify-between text-sm">
-                    <div className="flex items-center gap-2">
-                      <span className="inline-block h-2.5 w-2.5 rounded-full bg-brand-gray-200" />
-                      Total earned
-                    </div>
-                    <span className="font-medium">$0</span>
-                  </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <div className="flex items-center gap-2">
-                      <span className="inline-block h-2.5 w-2.5 rounded-full bg-purple-200" />
-                      Paid
-                    </div>
-                    <span className="font-medium">$0</span>
-                  </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <div className="flex items-center gap-2">
-                      <span className="inline-block h-2.5 w-2.5 rounded-full bg-purple-400" />
-                      Unpaid
-                    </div>
-                    <span className="font-medium">$0</span>
-                  </div>
+                  },
+                },
+                dataLabels: { enabled: false },
+                legend: { show: false },
+                stroke: { width: 0 },
+              }}
+            />
+            <div className="mt-2 space-y-1.5">
+              <div className="flex items-center justify-between text-sm">
+                <div className="flex items-center gap-2">
+                  <span className="inline-block h-2.5 w-2.5 rounded-full bg-brand-gray-200" />
+                  Total earned
                 </div>
-              </>
-            )}
+                <span className="font-medium">$0</span>
+              </div>
+              <div className="flex items-center justify-between text-sm">
+                <div className="flex items-center gap-2">
+                  <span className="inline-block h-2.5 w-2.5 rounded-full bg-purple-200" />
+                  Paid
+                </div>
+                <span className="font-medium">$0</span>
+              </div>
+              <div className="flex items-center justify-between text-sm">
+                <div className="flex items-center gap-2">
+                  <span className="inline-block h-2.5 w-2.5 rounded-full bg-purple-400" />
+                  Unpaid
+                </div>
+                <span className="font-medium">$0</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -313,33 +303,28 @@ export default function Home() {
       {/* Pending actions */}
       <div className="mb-6 rounded-lg border border-gray-200 bg-white p-5">
         <h2 className="mb-4 text-base font-semibold">Pending actions</h2>
-        {loading ? (
-          <Spinner />
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-3">
-            <PendingItem
-              icon={<Clock className="h-4 w-4 text-purple-500" />}
-              label="Pending promoters"
-              count={stats.pendingActions.promoters}
-            />
-            <PendingItem
-              icon={<DollarSign className="h-4 w-4 text-purple-500" />}
-              label="Pending commissions"
-              count={stats.pendingActions.commissions}
-            />
-            <PendingItem
-              icon={<LinkIcon className="h-4 w-4 text-purple-500" />}
-              label="Pending referrals"
-              count={stats.pendingActions.referrals}
-            />
-          </div>
-        )}
+        <div className="grid grid-cols-1 sm:grid-cols-3">
+          <PendingItem
+            icon={<Clock className="h-4 w-4 text-purple-500" />}
+            label="Pending promoters"
+            count={stats.pendingActions.promoters}
+          />
+          <PendingItem
+            icon={<DollarSign className="h-4 w-4 text-purple-500" />}
+            label="Pending commissions"
+            count={stats.pendingActions.commissions}
+          />
+          <PendingItem
+            icon={<LinkIcon className="h-4 w-4 text-purple-500" />}
+            label="Pending referrals"
+            count={stats.pendingActions.referrals}
+          />
+        </div>
       </div>
 
       {/* Rewards */}
       <RewardCard
         rewards={rewards}
-        loading={loading}
         onUpdated={() => {
           void loadData();
         }}
@@ -359,7 +344,7 @@ function StatCard({
   icon: React.ReactNode;
   iconBg: string;
   label: string;
-  value: string | null;
+  value: string;
 }) {
   return (
     <div className="flex items-center gap-4 rounded-lg border border-gray-200 bg-white p-5">
@@ -370,13 +355,7 @@ function StatCard({
       </div>
       <div>
         <p className="text-xs text-brand-gray-300">{label}</p>
-        {value === null ? (
-          <div className="mt-1">
-            <div className="h-5 w-5 animate-spin rounded-full border-2 border-purple-200 border-t-purple-500" />
-          </div>
-        ) : (
-          <p className="mt-0.5 text-2xl font-bold">{value}</p>
-        )}
+        <p className="mt-0.5 text-2xl font-bold">{value}</p>
       </div>
     </div>
   );
@@ -411,16 +390,14 @@ function PendingItem({
 
 function RewardCard({
   rewards,
-  loading,
   onUpdated,
 }: {
   rewards: RewardItem[];
-  loading: boolean;
   onUpdated: () => void;
 }) {
   const [showModal, setShowModal] = useState(false);
 
-  const isEmpty = !loading && rewards.length === 0;
+  const isEmpty = rewards.length === 0;
 
   return (
     <>
@@ -437,11 +414,7 @@ function RewardCard({
             {isEmpty ? "Set up" : "Edit"}
           </button>
         </div>
-        {loading ? (
-          <div className="mt-4 flex justify-center">
-            <div className="h-5 w-5 animate-spin rounded-full border-2 border-purple-200 border-t-purple-500" />
-          </div>
-        ) : isEmpty ? (
+        {isEmpty ? (
           <p className="mt-2 text-sm text-brand-gray-200">
             No reward configured yet. Click &quot;Set up&quot; to define what
             partners earn.

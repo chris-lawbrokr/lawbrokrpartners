@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { X, Search, SlidersHorizontal } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { apiFetch } from "@/lib/api";
+import PageSpinner from "@/components/page-spinner";
 
 interface MyReferral {
   id: number;
@@ -274,9 +275,7 @@ export default function PartnerReferralsPage() {
       </div>
 
       {loading ? (
-        <div className="flex justify-center py-16">
-          <div className="h-6 w-6 animate-spin rounded-full border-2 border-purple-200 border-t-purple-500" />
-        </div>
+        <PageSpinner />
       ) : (
         <div className="flex gap-4 overflow-x-auto pb-4">
           {columns.map((col) => {

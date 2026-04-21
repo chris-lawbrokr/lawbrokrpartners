@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth";
 import { apiFetch } from "@/lib/api";
 import { AssetCard, ASSET_TABS } from "@/app/admin/assets/page";
+import PageSpinner from "@/components/page-spinner";
 
 interface Asset {
   id: number;
@@ -64,9 +65,7 @@ export default function PartnerAssetsPage() {
       </div>
 
       {loading ? (
-        <div className="flex justify-center py-16">
-          <div className="h-6 w-6 animate-spin rounded-full border-2 border-purple-200 border-t-purple-500" />
-        </div>
+        <PageSpinner />
       ) : filtered.length === 0 ? (
         <div className="flex min-h-[200px] items-center justify-center rounded-lg border border-dashed border-gray-200 text-sm text-brand-gray-300">
           No assets available yet.
