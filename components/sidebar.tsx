@@ -8,7 +8,6 @@ import {
   LayoutDashboard,
   Users,
   Link as LinkIcon,
-  FolderOpen,
   LogOut,
   UserCircle,
 } from "lucide-react";
@@ -35,11 +34,6 @@ const adminNav: NavItem[] = [
     href: "/admin/referrals",
     icon: <LinkIcon className="h-4 w-4" />,
   },
-  {
-    label: "Assets",
-    href: "/admin/assets",
-    icon: <FolderOpen className="h-4 w-4" />,
-  },
 ];
 
 const partnerNav: NavItem[] = [
@@ -52,11 +46,6 @@ const partnerNav: NavItem[] = [
     label: "Referrals",
     href: "/dashboard/referrals",
     icon: <LinkIcon className="h-4 w-4" />,
-  },
-  {
-    label: "Assets",
-    href: "/dashboard/assets",
-    icon: <FolderOpen className="h-4 w-4" />,
   },
 ];
 

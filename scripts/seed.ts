@@ -157,25 +157,6 @@ async function main() {
   `;
   console.log("Created payout_methods table");
 
-  // Create assets table — brand content library.
-  // File bytes stored inline via bytea (intended for small assets only).
-  await sql`DROP TABLE IF EXISTS assets`;
-  await sql`
-    CREATE TABLE IF NOT EXISTS assets (
-      id SERIAL PRIMARY KEY,
-      title TEXT NOT NULL DEFAULT '',
-      category TEXT NOT NULL DEFAULT '',
-      mime_type TEXT NOT NULL DEFAULT '',
-      file_name TEXT NOT NULL DEFAULT '',
-      file_size INTEGER NOT NULL DEFAULT 0,
-      data BYTEA,
-      content TEXT NOT NULL DEFAULT '',
-      uploaded_by INTEGER REFERENCES users(id),
-      created_at TIMESTAMPTZ DEFAULT NOW()
-    )
-  `;
-  console.log("Created assets table");
-
   // Seed admin user
   const existing = await sql`SELECT id FROM users WHERE email = 'admin@lawbrokr.ca'`;
   if (existing.length === 0) {
