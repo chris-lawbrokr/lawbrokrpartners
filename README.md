@@ -169,5 +169,4 @@ x - mark as paid on card
 x - remove manual input
 
 countdown once pushed to close won
-
 update drive assets page
