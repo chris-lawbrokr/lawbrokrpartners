@@ -15,6 +15,7 @@ interface MyReferral {
   notes: string;
   status: string;
   admin_note: string;
+  monthly_amount: string | null;
   created_at: string;
   reviewed_at: string | null;
   paid_at: string | null;
@@ -302,9 +303,18 @@ export default function PartnerReferralsPage() {
                         onClick={() => {
                           setSelectedReferral(r);
                         }}
-                        className="cursor-pointer rounded-lg border border-gray-200 bg-white p-3 text-left transition-shadow hover:shadow-md"
+                        className="relative cursor-pointer rounded-lg border border-gray-200 bg-white p-3 text-left transition-shadow hover:shadow-md"
                       >
-                        <p className="truncate text-sm font-medium text-brand-gray-500">
+                        {col.key === "closed_won" ? (
+                          <span
+                            className={`absolute right-2 top-2 rounded-full px-2 py-0.5 text-[10px] font-semibold ${r.paid_at ? "bg-green-100 text-green-800" : "bg-yellow-100 text-yellow-800"}`}
+                          >
+                            {r.paid_at ? "Paid" : "Unpaid"}
+                          </span>
+                        ) : null}
+                        <p
+                          className={`truncate text-sm font-medium text-brand-gray-500 ${col.key === "closed_won" ? "pr-14" : ""}`}
+                        >
                           {r.lead_name || (
                             <span className="text-brand-gray-200">
                               No lead name
@@ -318,17 +328,39 @@ export default function PartnerReferralsPage() {
                             </span>
                           )}
                         </p>
-                        <p
-                          className={`mt-2 truncate text-xs ${r.reward_description ? "text-brand-gray-400" : "text-brand-gray-200"}`}
-                        >
-                          {r.reward_description
-                            ? `${r.reward_description} (${r.reward_type === "yearly" ? "Yearly" : "Monthly"})`
-                            : "No offer"}
-                        </p>
-                        <div className="mt-2 flex items-center justify-end">
-                          <span className="text-xs text-brand-gray-200">
-                            {new Date(r.created_at).toLocaleDateString()}
-                          </span>
+                        <div className="mt-3 space-y-2 text-xs">
+                          <div className="flex items-baseline justify-between gap-2">
+                            <span className="shrink-0 text-brand-gray-300">
+                              Offer
+                            </span>
+                            <span
+                              className={`truncate text-right ${r.reward_description ? "text-brand-gray-400" : "text-brand-gray-200"}`}
+                            >
+                              {r.reward_description
+                                ? `${r.reward_description} (${r.reward_type === "yearly" ? "Yearly" : "Monthly"})`
+                                : "No offer"}
+                            </span>
+                          </div>
+                          <div className="flex items-baseline justify-between gap-2">
+                            <span className="shrink-0 text-brand-gray-300">
+                              Monthly revenue
+                            </span>
+                            <span
+                              className={`truncate text-right ${r.monthly_amount ? "text-brand-gray-400" : "text-brand-gray-200"}`}
+                            >
+                              {r.monthly_amount
+                                ? `$${Number(r.monthly_amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}/mo`
+                                : "No revenue yet"}
+                            </span>
+                          </div>
+                          <div className="flex items-baseline justify-between gap-2">
+                            <span className="shrink-0 text-brand-gray-300">
+                              Created
+                            </span>
+                            <span className="truncate text-right text-brand-gray-400">
+                              {new Date(r.created_at).toLocaleDateString()}
+                            </span>
+                          </div>
                         </div>
                       </button>
                     ))

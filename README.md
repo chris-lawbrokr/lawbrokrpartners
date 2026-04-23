@@ -164,12 +164,10 @@ password123
 
 x - hide 'Select an offer' partner side submit lead form
 x - show offer as soon as the card reaches the /dashboard/referrals regardless of column
-x - remove manual input
-
 x - analytyics - referral amount x 12
 x - mark as paid on card
+x - remove manual input
 
 countdown once pushed to close won
-have it save dollar amnount when moving columns - also verify price update immediately after clicking save
 
 update drive assets page

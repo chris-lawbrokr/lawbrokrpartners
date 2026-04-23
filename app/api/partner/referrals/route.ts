@@ -12,7 +12,7 @@ export const GET = withApi(async (request: NextRequest) => {
   const sql = getDb();
   const rows = await sql`
     SELECT r.id, r.referral_code, r.lead_name, r.lead_email, r.lead_phone,
-           r.notes, r.status, r.admin_note, r.created_at, r.reviewed_at, r.paid_at,
+           r.notes, r.status, r.admin_note, r.monthly_amount, r.created_at, r.reviewed_at, r.paid_at,
            rw.id AS reward_id, rw.description AS reward_description, rw.type AS reward_type
     FROM referrals r
     LEFT JOIN rewards rw ON rw.id = r.reward_id
