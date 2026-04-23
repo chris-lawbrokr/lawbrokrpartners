@@ -46,8 +46,8 @@ export default function InvitePage() {
           </h1>
           <p className="mb-6 text-sm text-brand-gray-300">
             Thanks for enrolling! Your account is pending admin approval.
-            You&apos;ll be able to log in once an admin reviews and accepts
-            your enrollment.
+            You&apos;ll be able to log in once an admin reviews and accepts your
+            enrollment.
           </p>
           <button
             type="button"

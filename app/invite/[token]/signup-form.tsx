@@ -79,7 +79,9 @@ export default function SignupForm({
       }}
       className="w-full max-w-lg rounded-2xl border border-gray-100 bg-white p-10"
     >
-      <h1 className="mb-6 text-center text-3xl font-bold text-brand-gray-600">Sign Up</h1>
+      <h1 className="mb-6 text-center text-3xl font-bold text-brand-gray-600">
+        Sign Up
+      </h1>
 
       {error ? (
         <div className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-600">
@@ -96,7 +98,9 @@ export default function SignupForm({
           <input
             type="text"
             value={firstName}
-            onChange={(e) => { setFirstName(e.target.value); }}
+            onChange={(e) => {
+              setFirstName(e.target.value);
+            }}
             required
             placeholder="John"
             className="w-full rounded-lg bg-brand-gray-50 px-4 py-3 text-sm text-brand-gray-600 placeholder-brand-gray-200 outline-none focus:ring-2 focus:ring-purple-300"
@@ -109,7 +113,9 @@ export default function SignupForm({
           <input
             type="text"
             value={lastName}
-            onChange={(e) => { setLastName(e.target.value); }}
+            onChange={(e) => {
+              setLastName(e.target.value);
+            }}
             placeholder="Doe"
             className="w-full rounded-lg bg-brand-gray-50 px-4 py-3 text-sm text-brand-gray-600 placeholder-brand-gray-200 outline-none focus:ring-2 focus:ring-purple-300"
           />
@@ -124,7 +130,9 @@ export default function SignupForm({
         <input
           type="email"
           value={email}
-          onChange={(e) => { setEmail(e.target.value); }}
+          onChange={(e) => {
+            setEmail(e.target.value);
+          }}
           required
           placeholder="Enter your email"
           className="w-full rounded-lg bg-brand-gray-50 px-4 py-3 text-sm text-brand-gray-600 placeholder-brand-gray-200 outline-none focus:ring-2 focus:ring-purple-300"
@@ -139,7 +147,9 @@ export default function SignupForm({
         <input
           type="password"
           value={password}
-          onChange={(e) => { setPassword(e.target.value); }}
+          onChange={(e) => {
+            setPassword(e.target.value);
+          }}
           required
           minLength={8}
           placeholder="Enter your password"
@@ -155,7 +165,9 @@ export default function SignupForm({
         <input
           type="password"
           value={confirmPassword}
-          onChange={(e) => { setConfirmPassword(e.target.value); }}
+          onChange={(e) => {
+            setConfirmPassword(e.target.value);
+          }}
           required
           minLength={8}
           placeholder="Confirm your password"
@@ -171,7 +183,9 @@ export default function SignupForm({
         <input
           type="url"
           value={website}
-          onChange={(e) => { setWebsite(e.target.value); }}
+          onChange={(e) => {
+            setWebsite(e.target.value);
+          }}
           placeholder="https://example.com"
           className="w-full rounded-lg bg-brand-gray-50 px-4 py-3 text-sm text-brand-gray-600 placeholder-brand-gray-200 outline-none focus:ring-2 focus:ring-purple-300"
         />
@@ -182,13 +196,17 @@ export default function SignupForm({
         <input
           type="checkbox"
           checked={agreeTerms}
-          onChange={(e) => { setAgreeTerms(e.target.checked); }}
+          onChange={(e) => {
+            setAgreeTerms(e.target.checked);
+          }}
           className="mt-1 h-4 w-4 rounded border-gray-300 accent-purple-400"
         />
         <span className="text-sm text-brand-gray-400">
           I agree to Lawbrokr&apos;s{" "}
-          <span className="text-purple-400">affiliate terms &amp; conditions</span>
-          {" "}*
+          <span className="text-purple-400">
+            affiliate terms &amp; conditions
+          </span>{" "}
+          *
         </span>
       </label>
 
