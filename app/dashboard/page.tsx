@@ -40,6 +40,7 @@ interface MyReferral {
   admin_note: string;
   created_at: string;
   reviewed_at: string | null;
+  paid_at: string | null;
 }
 
 interface Stats {
@@ -134,6 +135,22 @@ export default function PartnerDashboard() {
     );
   }
 
+  const DAY_MS = 86_400_000;
+  const CYCLE_MS = 30 * DAY_MS;
+  const now = Date.now();
+  const nextPaymentDays = (() => {
+    const paidDates = referrals
+      .filter((r) => r.status === "closed_won" && r.paid_at)
+      .map((r) => new Date(r.paid_at as string).getTime());
+    if (paidDates.length === 0) return null;
+    const nextCycleDates = paidDates.map((paidAt) => {
+      const cyclesDone = Math.floor(Math.max(0, now - paidAt) / CYCLE_MS) + 1;
+      return paidAt + cyclesDone * CYCLE_MS;
+    });
+    const soonest = Math.min(...nextCycleDates);
+    return Math.max(0, Math.ceil((soonest - now) / DAY_MS));
+  })();
+
   return (
     <main className="mx-auto max-w-[900px] p-8">
       <h1 className="mb-6 text-2xl font-bold">Dashboard</h1>
@@ -156,7 +173,11 @@ export default function PartnerDashboard() {
             <CalendarClock className="h-5 w-5 text-purple-900" />
           </div>
           <div>
-            <p className="text-2xl font-bold text-purple-900">30 days</p>
+            <p className="text-2xl font-bold text-purple-900">
+              {nextPaymentDays === null
+                ? "-"
+                : `${nextPaymentDays} day${nextPaymentDays === 1 ? "" : "s"}`}
+            </p>
             <p className="text-xs text-brand-gray-900">Next Payment Due</p>
           </div>
         </div>
