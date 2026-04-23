@@ -528,14 +528,27 @@ export default function AdminReferralsPage() {
                               </span>
                               <span className="truncate text-right text-brand-gray-400">
                                 {r.reviewed_at
-                                  ? new Date(
-                                      r.reviewed_at,
-                                    ).toLocaleDateString()
+                                  ? new Date(r.reviewed_at).toLocaleDateString()
                                   : "-"}
                               </span>
                             </button>
                           ) : null}
                         </div>
+                        {col.key === "closed_won" && !r.paid_at ? (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              void handleTogglePaid(r.id, true);
+                            }}
+                            onMouseDown={(e) => {
+                              e.stopPropagation();
+                            }}
+                            className="mt-2 w-full cursor-pointer rounded bg-purple-400 py-1 text-xs font-medium text-white hover:bg-purple-500"
+                          >
+                            Mark as Paid
+                          </button>
+                        ) : null}
                       </div>
                     ))
                   )}
@@ -610,9 +623,7 @@ function ReferralModal({
   onTogglePaid: (paid: boolean) => void;
 }) {
   const [adminNote, setAdminNote] = useState(referral.admin_note);
-  const [amountInput, setAmountInput] = useState(
-    referral.monthly_amount ?? "",
-  );
+  const [amountInput, setAmountInput] = useState(referral.monthly_amount ?? "");
   const [submitting, setSubmitting] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
 

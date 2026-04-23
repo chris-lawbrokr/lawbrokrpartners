@@ -17,6 +17,7 @@ export const GET = withApi(async (request: NextRequest) => {
     topPromoters,
     pendingPromoters,
     pendingReferrals,
+    revenueRow,
   ] = await Promise.all([
     sql`
       SELECT
@@ -66,15 +67,22 @@ export const GET = withApi(async (request: NextRequest) => {
       FROM referrals
       WHERE status = 'submitted'
     `,
+    sql`
+      SELECT COALESCE(SUM(COALESCE(monthly_amount, 0)), 0)::float8 AS total
+      FROM referrals
+      WHERE status = 'closed_won'
+    `,
   ]);
 
   const rc = referralCounts[0] as { total: number; closed_won: number; submitted: number; pending: number } | undefined;
   const pc = promoterCounts[0] as { active: number; pending: number } | undefined;
   const pp = pendingPromoters[0] as { total: number } | undefined;
   const pr = pendingReferrals[0] as { total: number } | undefined;
+  const rev = revenueRow[0] as { total: number | string | null } | undefined;
+  const revenue = Number(rev?.total ?? 0) * 12;
 
   return NextResponse.json({
-    revenue: 0,
+    revenue,
     referrals: rc?.total ?? 0,
     payingCustomers: rc?.closed_won ?? 0,
     newReferrals: rc?.submitted ?? 0,
