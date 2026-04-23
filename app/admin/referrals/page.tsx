@@ -255,7 +255,7 @@ export default function AdminReferralsPage() {
   };
 
   return (
-    <main className="p-8">
+    <main className="flex h-full flex-col p-8">
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-2xl font-bold">Referrals</h1>
         <button
@@ -384,7 +384,7 @@ export default function AdminReferralsPage() {
       {loading ? (
         <PageSpinner />
       ) : (
-        <div className="flex gap-4 overflow-x-auto pb-4">
+        <div className="flex flex-1 gap-4 overflow-x-auto p-1">
           {columns.map((col) => {
             const items = grouped[col.key];
             const isDragOver = dragOverCol === col.key;
