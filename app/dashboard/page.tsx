@@ -32,7 +32,6 @@ const statusLabels: Record<string, string> = {
 interface MyReferral {
   id: number;
   referral_code: string;
-  source: string;
   lead_name: string;
   lead_email: string;
   lead_phone: string;
@@ -224,7 +223,6 @@ export default function PartnerDashboard() {
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b-2 border-gray-200 text-left">
-              <th className="px-2 py-3">Source</th>
               <th className="px-2 py-3">Lead</th>
               <th className="px-2 py-3">Status</th>
               <th className="px-2 py-3">Date</th>
@@ -235,7 +233,7 @@ export default function PartnerDashboard() {
             {referrals.length === 0 ? (
               <tr>
                 <td
-                  colSpan={5}
+                  colSpan={4}
                   className="py-6 text-center text-brand-gray-200"
                 >
                   No referrals yet. Share your link or submit a lead.
@@ -244,13 +242,6 @@ export default function PartnerDashboard() {
             ) : (
               referrals.map((r) => (
                 <tr key={r.id} className="border-b border-gray-200">
-                  <td className="px-2 py-3">
-                    <span
-                      className={`text-xs font-medium ${r.source === "manual" ? "text-purple-500" : "text-brand-gray-300"}`}
-                    >
-                      {r.source === "manual" ? "Manual" : "Link"}
-                    </span>
-                  </td>
                   <td className="px-2 py-3">
                     {r.lead_name || r.lead_email ? (
                       <div>
@@ -361,12 +352,6 @@ export default function PartnerDashboard() {
   );
 }
 
-interface RewardOption {
-  id: number;
-  description: string;
-  type: string;
-}
-
 function AddLeadModal({
   onClose,
   onCreated,
@@ -374,9 +359,6 @@ function AddLeadModal({
   onClose: () => void;
   onCreated: () => void;
 }) {
-  const [rewards, setRewards] = useState<RewardOption[]>([]);
-  const [loadingRewards, setLoadingRewards] = useState(true);
-  const [rewardId, setRewardId] = useState("");
   const [leadFirstName, setLeadFirstName] = useState("");
   const [leadLastName, setLeadLastName] = useState("");
   const [leadEmail, setLeadEmail] = useState("");
@@ -385,25 +367,9 @@ function AddLeadModal({
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  useEffect(() => {
-    async function load() {
-      const res = await apiFetch("/api/rewards");
-      if (res.ok) {
-        setRewards((await res.json()) as RewardOption[]);
-      }
-      setLoadingRewards(false);
-    }
-    void load();
-  }, []);
-
   const handleSubmit = async (e: React.SyntheticEvent) => {
     e.preventDefault();
     setError(null);
-
-    if (!rewardId) {
-      setError("Please select an offer.");
-      return;
-    }
 
     setSubmitting(true);
 
@@ -411,7 +377,6 @@ function AddLeadModal({
       const res = await apiFetch("/api/partner/referrals", {
         method: "POST",
         body: JSON.stringify({
-          rewardId: Number(rewardId),
           leadName: `${leadFirstName} ${leadLastName}`.trim(),
           leadEmail,
           leadPhone,
@@ -454,115 +419,90 @@ function AddLeadModal({
           </div>
         ) : null}
 
-        {loadingRewards ? (
-          <div className="flex justify-center py-10">
-            <div className="h-5 w-5 animate-spin rounded-full border-2 border-purple-200 border-t-purple-500" />
-          </div>
-        ) : (
-          <form
-            onSubmit={(e) => {
-              void handleSubmit(e);
-            }}
-            className="flex flex-col gap-3"
-          >
-            <label className="flex flex-col gap-1 text-sm font-medium">
-              Offer *
-              <select
-                value={rewardId}
+        <form
+          onSubmit={(e) => {
+            void handleSubmit(e);
+          }}
+          className="flex flex-col gap-3"
+        >
+          <div className="flex gap-3">
+            <label className="flex flex-1 flex-col gap-1 text-sm font-medium">
+              Lead First Name *
+              <input
+                type="text"
+                value={leadFirstName}
                 onChange={(e) => {
-                  setRewardId(e.target.value);
+                  setLeadFirstName(e.target.value);
                 }}
                 required
                 className="w-full rounded border border-brand-gray-100 bg-brand-gray-50 px-3 py-2 text-base outline-none focus:border-purple-400"
-              >
-                <option value="">Select an offer</option>
-                {rewards.map((r) => (
-                  <option key={r.id} value={r.id}>
-                    {r.description} (
-                    {r.type === "yearly" ? "Yearly" : "Monthly"})
-                  </option>
-                ))}
-              </select>
+              />
             </label>
-            <div className="flex gap-3">
-              <label className="flex flex-1 flex-col gap-1 text-sm font-medium">
-                Lead First Name *
-                <input
-                  type="text"
-                  value={leadFirstName}
-                  onChange={(e) => {
-                    setLeadFirstName(e.target.value);
-                  }}
-                  required
-                  className="w-full rounded border border-brand-gray-100 bg-brand-gray-50 px-3 py-2 text-base outline-none focus:border-purple-400"
-                />
-              </label>
-              <label className="flex flex-1 flex-col gap-1 text-sm font-medium">
-                Lead Last Name *
-                <input
-                  type="text"
-                  value={leadLastName}
-                  onChange={(e) => {
-                    setLeadLastName(e.target.value);
-                  }}
-                  required
-                  className="w-full rounded border border-brand-gray-100 bg-brand-gray-50 px-3 py-2 text-base outline-none focus:border-purple-400"
-                />
-              </label>
-            </div>
-            <label className="flex flex-col gap-1 text-sm font-medium">
-              Lead Email
+            <label className="flex flex-1 flex-col gap-1 text-sm font-medium">
+              Lead Last Name *
               <input
-                type="email"
-                value={leadEmail}
+                type="text"
+                value={leadLastName}
                 onChange={(e) => {
-                  setLeadEmail(e.target.value);
+                  setLeadLastName(e.target.value);
                 }}
+                required
                 className="w-full rounded border border-brand-gray-100 bg-brand-gray-50 px-3 py-2 text-base outline-none focus:border-purple-400"
               />
             </label>
-            <label className="flex flex-col gap-1 text-sm font-medium">
-              Lead Phone
-              <input
-                type="tel"
-                value={leadPhone}
-                onChange={(e) => {
-                  setLeadPhone(formatPhone(e.target.value));
-                }}
-                placeholder="(555) 123-4567"
-                className="w-full rounded border border-brand-gray-100 bg-brand-gray-50 px-3 py-2 text-base outline-none focus:border-purple-400"
-              />
-            </label>
-            <label className="flex flex-col gap-1 text-sm font-medium">
-              Notes
-              <textarea
-                value={notes}
-                onChange={(e) => {
-                  setNotes(e.target.value);
-                }}
-                rows={3}
-                placeholder="How did you refer this person?"
-                className="w-full rounded border border-brand-gray-100 bg-brand-gray-50 px-3 py-2 text-base outline-none focus:border-purple-400"
-              />
-            </label>
-            <div className="mt-2 flex gap-2">
-              <button
-                type="submit"
-                disabled={submitting}
-                className="flex-1 cursor-pointer rounded bg-purple-600 py-3 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-70"
-              >
-                {submitting ? "Submitting..." : "Submit for Review"}
-              </button>
-              <button
-                type="button"
-                onClick={onClose}
-                className="cursor-pointer rounded border border-brand-gray-100 bg-transparent px-4 py-3 text-sm"
-              >
-                Cancel
-              </button>
-            </div>
-          </form>
-        )}
+          </div>
+          <label className="flex flex-col gap-1 text-sm font-medium">
+            Lead Email
+            <input
+              type="email"
+              value={leadEmail}
+              onChange={(e) => {
+                setLeadEmail(e.target.value);
+              }}
+              className="w-full rounded border border-brand-gray-100 bg-brand-gray-50 px-3 py-2 text-base outline-none focus:border-purple-400"
+            />
+          </label>
+          <label className="flex flex-col gap-1 text-sm font-medium">
+            Lead Phone
+            <input
+              type="tel"
+              value={leadPhone}
+              onChange={(e) => {
+                setLeadPhone(formatPhone(e.target.value));
+              }}
+              placeholder="(555) 123-4567"
+              className="w-full rounded border border-brand-gray-100 bg-brand-gray-50 px-3 py-2 text-base outline-none focus:border-purple-400"
+            />
+          </label>
+          <label className="flex flex-col gap-1 text-sm font-medium">
+            Notes
+            <textarea
+              value={notes}
+              onChange={(e) => {
+                setNotes(e.target.value);
+              }}
+              rows={3}
+              placeholder="How did you refer this person?"
+              className="w-full rounded border border-brand-gray-100 bg-brand-gray-50 px-3 py-2 text-base outline-none focus:border-purple-400"
+            />
+          </label>
+          <div className="mt-2 flex gap-2">
+            <button
+              type="submit"
+              disabled={submitting}
+              className="flex-1 cursor-pointer rounded bg-purple-600 py-3 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-70"
+            >
+              {submitting ? "Submitting..." : "Submit for Review"}
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              className="cursor-pointer rounded border border-brand-gray-100 bg-transparent px-4 py-3 text-sm"
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );
@@ -724,10 +664,6 @@ function ReferralDetailModal({
         ) : (
           <>
             <div className="mb-6 space-y-3">
-              <DetailRow
-                label="Source"
-                value={referral.source === "manual" ? "Manual" : "Link Click"}
-              />
               <DetailRow label="Lead Name" value={referral.lead_name} />
               <DetailRow label="Lead Email" value={referral.lead_email} />
               <DetailRow label="Lead Phone" value={referral.lead_phone} />

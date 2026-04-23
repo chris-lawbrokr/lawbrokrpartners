@@ -84,7 +84,6 @@ async function main() {
   console.log("Seeded default rewards");
 
   // Create referrals table
-  // source: 'link' (from referral link) or 'manual' (partner submitted)
   // status: 'pending' -> 'submitted' -> 'approved' or 'rejected'
   await sql`
     CREATE TABLE IF NOT EXISTS referrals (
@@ -92,7 +91,6 @@ async function main() {
       partner_id INTEGER NOT NULL REFERENCES users(id),
       reward_id INTEGER REFERENCES rewards(id),
       referral_code TEXT NOT NULL,
-      source TEXT NOT NULL DEFAULT 'link',
       lead_name TEXT NOT NULL DEFAULT '',
       lead_email TEXT NOT NULL DEFAULT '',
       lead_phone TEXT NOT NULL DEFAULT '',
@@ -107,6 +105,7 @@ async function main() {
       created_at TIMESTAMPTZ DEFAULT NOW()
     )
   `;
+  await sql`ALTER TABLE referrals DROP COLUMN IF EXISTS source`;
   console.log("Created referrals table");
 
   // Create deals table
@@ -203,8 +202,8 @@ async function main() {
     const partnerId = partnerRows[0]?.id as number;
 
     await sql`
-      INSERT INTO referrals (partner_id, reward_id, referral_code, source, lead_name, lead_email, lead_phone, notes, status)
-      VALUES (${partnerId}, NULL, ${partnerReferralCode}, 'manual', 'Sample Lead', 'lead@example.com', '(555) 123-4567', 'Test lead awaiting review', 'submitted')
+      INSERT INTO referrals (partner_id, reward_id, referral_code, lead_name, lead_email, lead_phone, notes, status)
+      VALUES (${partnerId}, NULL, ${partnerReferralCode}, 'Sample Lead', 'lead@example.com', '(555) 123-4567', 'Test lead awaiting review', 'submitted')
     `;
     console.log("Seeded test partner: test@gmail.com / password123 (with pending lead)");
   } else {

@@ -70,14 +70,10 @@ export const PATCH = withApi(async (
   }
 
   if (body.status !== undefined) {
-    // Status change clears any attached offer, paid flag, and amount
     await sql`
       UPDATE referrals SET
         status = ${body.status},
         admin_note = ${body.adminNote ?? ""},
-        reward_id = NULL,
-        paid_at = NULL,
-        monthly_amount = NULL,
         reviewed_at = NOW()
       WHERE id = ${id}
     `;

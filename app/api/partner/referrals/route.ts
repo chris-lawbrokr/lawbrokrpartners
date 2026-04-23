@@ -11,7 +11,7 @@ export const GET = withApi(async (request: NextRequest) => {
 
   const sql = getDb();
   const rows = await sql`
-    SELECT r.id, r.referral_code, r.source, r.lead_name, r.lead_email, r.lead_phone,
+    SELECT r.id, r.referral_code, r.lead_name, r.lead_email, r.lead_phone,
            r.notes, r.status, r.admin_note, r.created_at, r.reviewed_at, r.paid_at,
            rw.id AS reward_id, rw.description AS reward_description, rw.type AS reward_type
     FROM referrals r
@@ -40,25 +40,17 @@ export const GET = withApi(async (request: NextRequest) => {
   });
 });
 
-// POST: Partner creates a manual lead
+// POST: Partner creates a lead
 export const POST = withApi(async (request: NextRequest) => {
   const auth = await requireAuth(request);
   if (auth instanceof NextResponse) return auth;
 
   const body = (await request.json()) as {
-    rewardId?: number;
     leadName?: string;
     leadEmail?: string;
     leadPhone?: string;
     notes?: string;
   };
-
-  if (!body.rewardId) {
-    return NextResponse.json(
-      { message: "Offer is required" },
-      { status: 400 },
-    );
-  }
 
   if (!body.leadName && !body.leadEmail) {
     return NextResponse.json(
@@ -69,18 +61,13 @@ export const POST = withApi(async (request: NextRequest) => {
 
   const sql = getDb();
 
-  const rewards = await sql`SELECT id FROM rewards WHERE id = ${body.rewardId}`;
-  if (rewards.length === 0) {
-    return NextResponse.json({ message: "Offer not found" }, { status: 404 });
-  }
-
   // Get the partner's referral code
   const userRows = await sql`SELECT referral_code FROM users WHERE id = ${auth.userId}`;
   const referralCode = String(userRows[0]?.referral_code ?? "");
 
   await sql`
-    INSERT INTO referrals (partner_id, reward_id, referral_code, source, lead_name, lead_email, lead_phone, notes, status)
-    VALUES (${auth.userId}, ${body.rewardId}, ${referralCode}, 'manual', ${body.leadName ?? ""}, ${body.leadEmail ?? ""}, ${body.leadPhone ?? ""}, ${body.notes ?? ""}, 'submitted')
+    INSERT INTO referrals (partner_id, referral_code, lead_name, lead_email, lead_phone, notes, status)
+    VALUES (${auth.userId}, ${referralCode}, ${body.leadName ?? ""}, ${body.leadEmail ?? ""}, ${body.leadPhone ?? ""}, ${body.notes ?? ""}, 'submitted')
   `;
 
   return NextResponse.json({ ok: true }, { status: 201 });

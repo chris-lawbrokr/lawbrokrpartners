@@ -9,7 +9,6 @@ import PageSpinner from "@/components/page-spinner";
 interface MyReferral {
   id: number;
   referral_code: string;
-  source: string;
   lead_name: string;
   lead_email: string;
   lead_phone: string;
@@ -319,12 +318,14 @@ export default function PartnerReferralsPage() {
                             </span>
                           )}
                         </p>
-                        <div className="mt-2 flex items-center justify-between">
-                          <span
-                            className={`text-xs font-medium ${r.source === "manual" ? "text-purple-500" : "text-brand-gray-300"}`}
-                          >
-                            {r.source === "manual" ? "Manual" : "Link"}
-                          </span>
+                        <p
+                          className={`mt-2 truncate text-xs ${r.reward_description ? "text-brand-gray-400" : "text-brand-gray-200"}`}
+                        >
+                          {r.reward_description
+                            ? `${r.reward_description} (${r.reward_type === "yearly" ? "Yearly" : "Monthly"})`
+                            : "No offer"}
+                        </p>
+                        <div className="mt-2 flex items-center justify-end">
                           <span className="text-xs text-brand-gray-200">
                             {new Date(r.created_at).toLocaleDateString()}
                           </span>
@@ -507,10 +508,6 @@ function ReferralDetailModal({
         ) : (
           <>
             <div className="space-y-3 px-6 py-5">
-              <DetailRow
-                label="Source"
-                value={referral.source === "manual" ? "Manual" : "Link Click"}
-              />
               <DetailRow label="Lead Name" value={referral.lead_name} />
               <DetailRow label="Lead Email" value={referral.lead_email} />
               <DetailRow label="Lead Phone" value={referral.lead_phone} />

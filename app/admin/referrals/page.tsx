@@ -29,7 +29,6 @@ interface RewardOption {
 interface Referral {
   id: number;
   referral_code: string;
-  source: string;
   lead_name: string;
   lead_email: string;
   lead_phone: string;
@@ -180,21 +179,8 @@ export default function AdminReferralsPage() {
   const handleDrop = async (id: number, newStatus: DroppableStatus) => {
     const ref = referrals.find((r) => r.id === id);
     if (!ref || ref.status === newStatus) return;
-    // Optimistic update — server clears reward_id and paid_at on status change
     setReferrals((prev) =>
-      prev.map((r) =>
-        r.id === id
-          ? {
-              ...r,
-              status: newStatus,
-              reward_id: null,
-              reward_description: null,
-              reward_type: null,
-              paid_at: null,
-              monthly_amount: null,
-            }
-          : r,
-      ),
+      prev.map((r) => (r.id === id ? { ...r, status: newStatus } : r)),
     );
     const res = await apiFetch(`/api/referrals/${String(id)}`, {
       method: "PATCH",
@@ -773,10 +759,6 @@ function ReferralModal({
               </button>
             </div>
           ) : null}
-          <DetailRow
-            label="Source"
-            value={referral.source === "manual" ? "Manual" : "Link Click"}
-          />
           {referral.lead_name ? (
             <DetailRow label="Lead Name" value={referral.lead_name} />
           ) : null}
