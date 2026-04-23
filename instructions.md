@@ -3,6 +3,7 @@
 End-to-end plan for adding "forgot password" → emailed reset link → "set new password" flow. Follows existing patterns in this repo (Next.js App Router, Neon via `@neondatabase/serverless`, bcryptjs, `jose` JWTs, JSON routes under `app/api`).
 
 Empty directories already exist and should be filled in:
+
 - `app/forgot-password/`
 - `app/reset-password/[token]/`
 - `app/api/auth/forgot-password/`
@@ -15,7 +16,7 @@ Empty directories already exist and should be filled in:
 1. Create a Resend account at resend.com.
 2. Verify the sending domain (e.g. `lawbrokr.ca`) with the DNS records Resend provides. Without a verified domain, production email will not send.
 3. Generate an API key in the Resend dashboard.
-4. Decide the `from` address (e.g. `no-reply@lawbrokr.ca`) and display name (e.g. `LawBrokr Partners`).
+4. Decide the `from` address (e.g. `no-reply@lawbrokr.ca`) and display name (e.g. `Lawbrokr Partners`).
 
 ## 2. Environment variables
 
@@ -23,7 +24,7 @@ Add to `.env.local` (and production env):
 
 ```
 RESEND_API_KEY=re_xxx
-EMAIL_FROM="LawBrokr Partners <no-reply@lawbrokr.ca>"
+EMAIL_FROM="Lawbrokr Partners <no-reply@lawbrokr.ca>"
 APP_URL=https://partners.lawbrokr.ca   # used to build reset links
 ```
 
@@ -67,6 +68,7 @@ Place this block alongside the other `CREATE TABLE` statements (before the user-
 Single module that wraps Resend and exposes typed helpers. Keeps the Resend import and key lookup in one place.
 
 Responsibilities:
+
 - Lazy-init a `Resend` client (read `RESEND_API_KEY` at call time, mirroring `getDb()` in `lib/db.ts`).
 - Export `sendPasswordResetEmail({ to, firstName, resetUrl })`.
 - Render a minimal HTML + plaintext email body inline (no template engine yet — keep it simple). Include the reset link, expiry window ("expires in 1 hour"), and a "you can ignore this if you didn't request it" line.
@@ -79,6 +81,7 @@ Responsibilities:
 Request: `{ email: string }`
 
 Behavior:
+
 1. Validate `email` is a non-empty string.
 2. Look up user by email. **Always return the same 200 response** regardless of whether the user exists — this prevents email enumeration. Response: `{ ok: true }` with a generic message.
 3. If the user exists AND `status === 'active'`:
@@ -99,6 +102,7 @@ Follow the `app/api/invite/[token]/route.ts` pattern (dynamic param + `GET` vali
 **`GET`** — validate a token before rendering the page. Hash the incoming token, look it up, and return 200 `{ ok: true }` only if a row exists, `used_at IS NULL`, and `expires_at > NOW()`. Otherwise 410 `{ message: "This reset link is invalid or has expired" }`. Never echo the token or user email back.
 
 **`POST`** — body `{ password: string }`.
+
 1. Require `password.length >= 8` (match the invite route's rule).
 2. Hash the URL token; look it up with the same validity checks as `GET`. 410 on failure.
 3. `bcrypt.hash(password, 12)`, then `UPDATE users SET password_hash = ... WHERE id = ...`.
@@ -114,6 +118,7 @@ Client component. Email input + submit. On submit, `POST /api/auth/forgot-passwo
 ### `app/reset-password/[token]/page.tsx`
 
 Client component. On mount, `GET /api/auth/reset-password/[token]` to validate the token:
+
 - While validating: spinner (no empty-state text — follow the loading-state convention already used elsewhere).
 - If invalid/expired: show an error card with a link to `/forgot-password`.
 - If valid: render a form with `password` + `confirm password`. On submit, `POST` to the same route, then redirect to `/login?reset=1` (or just `/login` with a one-time success toast).
@@ -138,6 +143,7 @@ Add a "Forgot password?" link under the password field pointing to `/forgot-pass
 ## 9. Testing plan
 
 Local manual test:
+
 1. Run `npm run db:seed` to pick up the new table.
 2. Trigger `/forgot-password` with `test@gmail.com` → confirm Resend dashboard shows the send and the email arrives.
 3. Click the link → verify the reset page loads the form.

@@ -3,8 +3,8 @@ import { AuthProvider } from "@/lib/auth";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "LawBrokr Partners",
-  description: "LawBrokr Internal Dashboard",
+  title: "Lawbrokr Partners",
+  description: "Lawbrokr Internal Dashboard",
 };
 
 export default function RootLayout({

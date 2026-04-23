@@ -20,30 +20,59 @@ interface NavItem {
 }
 
 const adminNav: NavItem[] = [
-  { label: "Dashboard", href: "/admin", icon: <LayoutDashboard className="h-4 w-4" /> },
-  { label: "Partners", href: "/admin/partners", icon: <Users className="h-4 w-4" /> },
-  { label: "Referrals", href: "/admin/referrals", icon: <LinkIcon className="h-4 w-4" /> },
-  { label: "Assets", href: "/admin/assets", icon: <FolderOpen className="h-4 w-4" /> },
+  {
+    label: "Dashboard",
+    href: "/admin",
+    icon: <LayoutDashboard className="h-4 w-4" />,
+  },
+  {
+    label: "Partners",
+    href: "/admin/partners",
+    icon: <Users className="h-4 w-4" />,
+  },
+  {
+    label: "Referrals",
+    href: "/admin/referrals",
+    icon: <LinkIcon className="h-4 w-4" />,
+  },
+  {
+    label: "Assets",
+    href: "/admin/assets",
+    icon: <FolderOpen className="h-4 w-4" />,
+  },
 ];
 
 const partnerNav: NavItem[] = [
-  { label: "Dashboard", href: "/dashboard", icon: <LayoutDashboard className="h-4 w-4" /> },
-  { label: "Referrals", href: "/dashboard/referrals", icon: <LinkIcon className="h-4 w-4" /> },
-  { label: "Assets", href: "/dashboard/assets", icon: <FolderOpen className="h-4 w-4" /> },
+  {
+    label: "Dashboard",
+    href: "/dashboard",
+    icon: <LayoutDashboard className="h-4 w-4" />,
+  },
+  {
+    label: "Referrals",
+    href: "/dashboard/referrals",
+    icon: <LinkIcon className="h-4 w-4" />,
+  },
+  {
+    label: "Assets",
+    href: "/dashboard/assets",
+    icon: <FolderOpen className="h-4 w-4" />,
+  },
 ];
 
 export function Sidebar({ variant }: { variant: "admin" | "partner" }) {
   const pathname = usePathname();
   const { user, logout } = useAuth();
   const items = variant === "admin" ? adminNav : partnerNav;
-  const profileHref = variant === "admin" ? "/admin/profile" : "/dashboard/profile";
+  const profileHref =
+    variant === "admin" ? "/admin/profile" : "/dashboard/profile";
   const profileActive = pathname === profileHref;
 
   return (
     <aside className="flex h-screen w-56 shrink-0 flex-col border-r border-gray-200 bg-white">
       {/* Logo */}
       <div className="flex h-14 items-center px-5">
-        <img src="/Logo.svg" alt="LawBrokr" className="h-6" />
+        <img src="/Logo.svg" alt="Lawbrokr" className="h-6" />
       </div>
 
       {/* Profile link (shows user name) */}
@@ -92,7 +121,9 @@ export function Sidebar({ variant }: { variant: "admin" | "partner" }) {
       <div className="border-t border-gray-200 px-4 py-4">
         <button
           type="button"
-          onClick={() => { void logout(); }}
+          onClick={() => {
+            void logout();
+          }}
           className="flex w-full cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm text-brand-gray-400 hover:bg-brand-gray-50 hover:text-brand-gray-600"
         >
           <LogOut className="h-4 w-4" />
@@ -113,9 +144,7 @@ export function SidebarLayout({
   return (
     <div className="flex h-screen">
       <Sidebar variant={variant} />
-      <div className="flex-1 overflow-auto">
-        {children}
-      </div>
+      <div className="flex-1 overflow-auto">{children}</div>
     </div>
   );
 }

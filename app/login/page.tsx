@@ -36,7 +36,7 @@ export default function LoginPage() {
         <div className="mb-2 flex justify-center">
           <Image
             src="/Logo.svg"
-            alt="LawBrokr"
+            alt="Lawbrokr"
             width={117}
             height={30}
             priority

@@ -87,7 +87,7 @@ export default function InvitePage() {
         style={{ backgroundImage: "url(/invite-bg.jpg)" }}
       >
         <div className="absolute top-0 left-0 p-8">
-          <img src="/Logo.svg" alt="LawBrokr" className="h-8" />
+          <img src="/Logo.svg" alt="Lawbrokr" className="h-8" />
           <h2 className="mt-6 text-4xl font-semibold text-black">
             Welcome to Lawbrokr&apos;s
             <br />
