@@ -3,8 +3,9 @@ import type { NextRequest } from "next/server";
 import crypto from "crypto";
 import { getDb } from "@/lib/db";
 import { requireAdmin } from "@/lib/api-auth";
+import { withApi } from "@/lib/api-errors";
 
-export async function GET(request: NextRequest) {
+export const GET = withApi(async (request: NextRequest) => {
   const auth = await requireAdmin(request);
   if (auth instanceof NextResponse) return auth;
 
@@ -20,9 +21,9 @@ export async function GET(request: NextRequest) {
     ORDER BY u.created_at DESC
   `;
   return NextResponse.json(rows);
-}
+});
 
-export async function POST(request: NextRequest) {
+export const POST = withApi(async (request: NextRequest) => {
   const auth = await requireAdmin(request);
   if (auth instanceof NextResponse) return auth;
 
@@ -49,4 +50,4 @@ export async function POST(request: NextRequest) {
   `;
 
   return NextResponse.json({ inviteToken: token }, { status: 201 });
-}
+});

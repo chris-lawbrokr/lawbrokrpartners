@@ -2,13 +2,14 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { getDb } from "@/lib/db";
 import { requireAdmin, requireAuth } from "@/lib/api-auth";
+import { withApi } from "@/lib/api-errors";
 
 // GET: Download the file bytes. ?thumb=1 is a hint but currently returns the
 // same bytes — small enough that client-side sizing is fine.
-export async function GET(
+export const GET = withApi(async (
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
-) {
+) => {
   const auth = await requireAuth(request);
   if (auth instanceof NextResponse) return auth;
 
@@ -48,12 +49,12 @@ export async function GET(
       "Cache-Control": "private, max-age=60",
     },
   });
-}
+});
 
-export async function DELETE(
+export const DELETE = withApi(async (
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
-) {
+) => {
   const auth = await requireAdmin(request);
   if (auth instanceof NextResponse) return auth;
 
@@ -67,4 +68,4 @@ export async function DELETE(
 
   await sql`DELETE FROM assets WHERE id = ${id}`;
   return NextResponse.json({ ok: true });
-}
+});

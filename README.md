@@ -134,19 +134,18 @@ lead phone number
 
 ---
 
-rewards
-
-left to right drag drop status cards
-rewards
-
-```
+```bash
 rm -rf .next && npm run dev
 ```
 
-```
+```bash
 npm run dev
 ```
 
-```
+```bash
 npm run db:seed
+```
+
+```bash
+https://lawbrokrpartners-9hbb.vercel.app
 ```

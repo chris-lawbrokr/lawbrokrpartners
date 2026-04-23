@@ -3,8 +3,9 @@ import type { NextRequest } from "next/server";
 import bcrypt from "bcryptjs";
 import { getDb } from "@/lib/db";
 import { requireAuth } from "@/lib/api-auth";
+import { withApi } from "@/lib/api-errors";
 
-export async function POST(request: NextRequest) {
+export const POST = withApi(async (request: NextRequest) => {
   const auth = await requireAuth(request);
   if (auth instanceof NextResponse) return auth;
 
@@ -62,4 +63,4 @@ export async function POST(request: NextRequest) {
   `;
 
   return NextResponse.json({ ok: true });
-}
+});

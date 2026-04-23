@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { getDb } from "@/lib/db";
 import { requireAuth } from "@/lib/api-auth";
+import { withApi } from "@/lib/api-errors";
 
 interface PayoutBody {
   bankCountry: string;
@@ -20,7 +21,7 @@ function maskValue(val: string): string {
   return "*".repeat(val.length - 4) + val.slice(-4);
 }
 
-export async function GET(request: NextRequest) {
+export const GET = withApi(async (request: NextRequest) => {
   const auth = await requireAuth(request);
   if (auth instanceof NextResponse) return auth;
 
@@ -60,9 +61,9 @@ export async function GET(request: NextRequest) {
     recipientPostalCode: row.recipient_postal_code,
     status: row.status,
   });
-}
+});
 
-export async function PUT(request: NextRequest) {
+export const PUT = withApi(async (request: NextRequest) => {
   const auth = await requireAuth(request);
   if (auth instanceof NextResponse) return auth;
 
@@ -103,4 +104,4 @@ export async function PUT(request: NextRequest) {
   `;
 
   return NextResponse.json({ ok: true });
-}
+});

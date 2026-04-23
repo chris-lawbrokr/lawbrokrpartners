@@ -2,8 +2,9 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { getDb } from "@/lib/db";
 import { verifyRefreshToken, signAccessToken, signRefreshToken } from "@/lib/jwt";
+import { withApi } from "@/lib/api-errors";
 
-export async function POST(request: NextRequest) {
+export const POST = withApi(async (request: NextRequest) => {
   const token = request.cookies.get("refresh_token")?.value;
 
   if (!token) {
@@ -66,4 +67,4 @@ export async function POST(request: NextRequest) {
   });
 
   return response;
-}
+});

@@ -2,11 +2,12 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { getDb } from "@/lib/db";
 import { requireAdmin } from "@/lib/api-auth";
+import { withApi } from "@/lib/api-errors";
 
-export async function GET(
+export const GET = withApi(async (
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
-) {
+) => {
   const auth = await requireAdmin(request);
   if (auth instanceof NextResponse) return auth;
 
@@ -23,12 +24,12 @@ export async function GET(
   }
 
   return NextResponse.json(rows[0]);
-}
+});
 
-export async function PATCH(
+export const PATCH = withApi(async (
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
-) {
+) => {
   const auth = await requireAdmin(request);
   if (auth instanceof NextResponse) return auth;
 
@@ -73,12 +74,12 @@ export async function PATCH(
   `;
 
   return NextResponse.json({ ok: true });
-}
+});
 
-export async function DELETE(
+export const DELETE = withApi(async (
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
-) {
+) => {
   const auth = await requireAdmin(request);
   if (auth instanceof NextResponse) return auth;
 
@@ -90,4 +91,4 @@ export async function DELETE(
   await sql`DELETE FROM users WHERE id = ${id} AND is_admin = false`;
 
   return NextResponse.json({ ok: true });
-}
+});

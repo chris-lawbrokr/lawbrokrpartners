@@ -3,8 +3,9 @@ import type { NextRequest } from "next/server";
 import bcrypt from "bcryptjs";
 import { getDb } from "@/lib/db";
 import { signAccessToken, signRefreshToken } from "@/lib/jwt";
+import { withApi } from "@/lib/api-errors";
 
-export async function POST(request: NextRequest) {
+export const POST = withApi(async (request: NextRequest) => {
   const body = (await request.json()) as { email?: string; password?: string };
   const { email, password } = body;
 
@@ -81,4 +82,4 @@ export async function POST(request: NextRequest) {
   });
 
   return response;
-}
+});

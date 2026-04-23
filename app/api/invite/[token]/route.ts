@@ -3,11 +3,12 @@ import type { NextRequest } from "next/server";
 import crypto from "crypto";
 import bcrypt from "bcryptjs";
 import { getDb } from "@/lib/db";
+import { withApi } from "@/lib/api-errors";
 
-export async function GET(
+export const GET = withApi(async (
   _request: NextRequest,
   { params }: { params: Promise<{ token: string }> },
-) {
+) => {
   const { token } = await params;
   const sql = getDb();
 
@@ -33,12 +34,12 @@ export async function GET(
     email: String(invite?.email),
     website: String(invite?.website),
   });
-}
+});
 
-export async function POST(
+export const POST = withApi(async (
   request: NextRequest,
   { params }: { params: Promise<{ token: string }> },
-) {
+) => {
   const { token } = await params;
   const body = (await request.json()) as {
     firstName?: string;
@@ -120,4 +121,4 @@ export async function POST(
     },
     { status: 201 },
   );
-}
+});

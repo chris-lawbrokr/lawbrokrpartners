@@ -2,11 +2,12 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { getDb } from "@/lib/db";
 import { requireAdmin } from "@/lib/api-auth";
+import { withApi } from "@/lib/api-errors";
 
-export async function GET(
+export const GET = withApi(async (
   request: NextRequest,
   { params }: { params: Promise<{ userId: string }> },
-) {
+) => {
   const auth = await requireAdmin(request);
   if (auth instanceof NextResponse) return auth;
 
@@ -37,4 +38,4 @@ export async function GET(
     recipientPostalCode: row.recipient_postal_code,
     status: row.status,
   });
-}
+});

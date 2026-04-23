@@ -2,11 +2,12 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { getDb } from "@/lib/db";
 import { requireAdmin } from "@/lib/api-auth";
+import { withApi } from "@/lib/api-errors";
 
-export async function PATCH(
+export const PATCH = withApi(async (
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
-) {
+) => {
   const auth = await requireAdmin(request);
   if (auth instanceof NextResponse) return auth;
 
@@ -32,12 +33,12 @@ export async function PATCH(
     return NextResponse.json({ message: "Deal not found" }, { status: 404 });
   }
   return NextResponse.json(rows[0]);
-}
+});
 
-export async function DELETE(
+export const DELETE = withApi(async (
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
-) {
+) => {
   const auth = await requireAdmin(request);
   if (auth instanceof NextResponse) return auth;
 
@@ -45,4 +46,4 @@ export async function DELETE(
   const sql = getDb();
   await sql`DELETE FROM deals WHERE id = ${id}`;
   return NextResponse.json({ ok: true });
-}
+});

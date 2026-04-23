@@ -2,9 +2,10 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { getDb } from "@/lib/db";
 import { requireAdmin } from "@/lib/api-auth";
+import { withApi } from "@/lib/api-errors";
 
 // GET: List all referrals (admin only)
-export async function GET(request: NextRequest) {
+export const GET = withApi(async (request: NextRequest) => {
   const auth = await requireAdmin(request);
   if (auth instanceof NextResponse) return auth;
 
@@ -28,10 +29,10 @@ export async function GET(request: NextRequest) {
       r.created_at DESC
   `;
   return NextResponse.json(rows);
-}
+});
 
 // POST: Webhook called by Flowbite site (no auth required — public webhook)
-export async function POST(request: NextRequest) {
+export const POST = withApi(async (request: NextRequest) => {
   const body = (await request.json()) as { ref?: string };
   const ref = body.ref;
 
@@ -59,4 +60,4 @@ export async function POST(request: NextRequest) {
   `;
 
   return NextResponse.json({ ok: true }, { status: 201 });
-}
+});

@@ -2,8 +2,9 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { getDb } from "@/lib/db";
 import { requireAuth } from "@/lib/api-auth";
+import { withApi } from "@/lib/api-errors";
 
-export async function GET(request: NextRequest) {
+export const GET = withApi(async (request: NextRequest) => {
   const auth = await requireAuth(request);
   if (auth instanceof NextResponse) return auth;
 
@@ -14,4 +15,4 @@ export async function GET(request: NextRequest) {
     ORDER BY is_default DESC, created_at DESC
   `;
   return NextResponse.json(rows);
-}
+});

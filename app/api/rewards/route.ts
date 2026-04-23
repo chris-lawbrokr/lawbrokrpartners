@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { getDb } from "@/lib/db";
 import { requireAdmin, requireAuth } from "@/lib/api-auth";
+import { withApi } from "@/lib/api-errors";
 
 interface RewardInput {
   category: string;
@@ -11,16 +12,16 @@ interface RewardInput {
   sort_order: number;
 }
 
-export async function GET(request: NextRequest) {
+export const GET = withApi(async (request: NextRequest) => {
   const auth = await requireAuth(request);
   if (auth instanceof NextResponse) return auth;
 
   const sql = getDb();
   const rows = await sql`SELECT id, category, type, description, note, sort_order FROM rewards ORDER BY category, sort_order, id`;
   return NextResponse.json(rows);
-}
+});
 
-export async function PUT(request: NextRequest) {
+export const PUT = withApi(async (request: NextRequest) => {
   const auth = await requireAdmin(request);
   if (auth instanceof NextResponse) return auth;
 
@@ -38,4 +39,4 @@ export async function PUT(request: NextRequest) {
 
   const rows = await sql`SELECT id, category, type, description, note, sort_order FROM rewards ORDER BY category, sort_order, id`;
   return NextResponse.json(rows);
-}
+});

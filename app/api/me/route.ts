@@ -2,8 +2,9 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { getDb } from "@/lib/db";
 import { requireAuth } from "@/lib/api-auth";
+import { withApi } from "@/lib/api-errors";
 
-export async function GET(request: NextRequest) {
+export const GET = withApi(async (request: NextRequest) => {
   const auth = await requireAuth(request);
   if (auth instanceof NextResponse) return auth;
 
@@ -19,9 +20,9 @@ export async function GET(request: NextRequest) {
   }
 
   return NextResponse.json(rows[0]);
-}
+});
 
-export async function PATCH(request: NextRequest) {
+export const PATCH = withApi(async (request: NextRequest) => {
   const auth = await requireAuth(request);
   if (auth instanceof NextResponse) return auth;
 
@@ -42,4 +43,4 @@ export async function PATCH(request: NextRequest) {
   `;
 
   return NextResponse.json({ ok: true });
-}
+});
